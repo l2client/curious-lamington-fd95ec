@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>L2 Telegram 3D MMORPG</title>
+    
+    <!-- Скрипты Telegram и Джойстика -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    
+    <!-- THREE.JS и загрузчик GLTF моделей -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; touch-action: none; }
@@ -14,13 +19,15 @@
         /* СТАРТОВЫЙ ЭКРАН */
         #start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; background: #0c0c0e; z-index: 10000; }
         .start-logo { font-size: 32px; color: #d4af37; font-weight: bold; margin-bottom: 40px; text-shadow: 0 0 20px rgba(212, 175, 55, 0.6); text-transform: uppercase; letter-spacing: 2px;}
-        .play-btn { background: radial-gradient(circle, #7a1c1c, #300000); border: 2px solid #d4af37; color: #fff; font-size: 24px; font-weight: bold; padding: 20px 60px; border-radius: 12px; cursor: pointer; box-shadow: 0 0 30px rgba(212, 175, 55, 0.4); }
+        .play-btn { background: radial-gradient(circle, #7a1c1c, #300000); border: 2px solid #d4af37; color: #fff; font-size: 24px; font-weight: bold; padding: 20px 60px; border-radius: 12px; cursor: pointer; box-shadow: 0 0 30px rgba(212, 175, 55, 0.4); transition: 0.2s; }
+        .play-btn:active { transform: scale(0.9); }
 
         /* ЭКРАН СОЗДАНИЯ */
         #creation-screen { display: none; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; padding: 20px; box-sizing: border-box; background: #000; position: fixed; top: 0; left: 0; z-index: 100; }
-        .creation-title { font-size: 28px; color: #f1fa8c; margin-bottom: 30px; }
+        .creation-title { font-size: 28px; color: #f1fa8c; margin-bottom: 30px; text-shadow: 0 0 10px rgba(241, 250, 140, 0.5); }
         .class-grid { display: flex; flex-direction: row; gap: 20px; }
-        .class-card { background: #18181c; border: 2px solid #d4af37; padding: 20px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .class-card { background: #18181c; border: 2px solid #d4af37; padding: 20px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 18px; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3); transition: 0.2s; }
+        .class-card:active { transform: scale(0.9); }
         
         /* ИГРОВОЙ ЭКРАН */
         #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
@@ -36,34 +43,40 @@
         .player-hud { position: absolute; top: 15px; left: 15px; display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(15,15,20,0.95) 0%, rgba(15,15,20,0.6) 100%); padding: 6px 20px 6px 6px; border-radius: 40px 10px 10px 40px; border: 1px solid #332d1f; border-left: 2px solid #d4af37; box-shadow: 0 4px 10px rgba(0,0,0,0.7); }
         .avatar-box { position: relative; width: 56px; height: 56px; }
         .avatar-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #7a6b42; object-fit: cover; background: #222; }
-        .level-badge { position: absolute; bottom: -4px; right: -4px; background: linear-gradient(180deg, #f1fa8c, #d4af37); color: #000; font-size: 11px; font-weight: 900; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #111; }
+        .level-badge { position: absolute; bottom: -4px; right: -4px; background: linear-gradient(180deg, #f1fa8c, #d4af37); color: #000; font-size: 11px; font-weight: 900; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #111; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .hud-info { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
-        .hud-name { font-size: 14px; font-weight: bold; color: #fff; }
-        .hud-class { color: #8be9fd; font-size: 10px; margin-left: 5px; }
-        .bar-container { position: relative; width: 100%; height: 14px; background: #1a1a1a; border-radius: 3px; border: 1px solid #000; overflow: hidden; }
+        .hud-name { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 2px; text-shadow: 1px 1px 2px #000; letter-spacing: 0.5px;}
+        .hud-class { color: #8be9fd; font-size: 10px; font-weight: normal; margin-left: 5px; }
+        .bar-container { position: relative; width: 100%; height: 14px; background: #1a1a1a; border-radius: 3px; border: 1px solid #000; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
         .bar-fill { height: 100%; transition: width 0.3s ease; }
-        .hp-fill { background: linear-gradient(180deg, #ff5555 0%, #aa0000 100%); }
-        .mp-fill { background: linear-gradient(180deg, #5555ff 0%, #0000aa 100%); }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 14px; color: #fff; }
+        .hp-fill { background: linear-gradient(180deg, #ff5555 0%, #aa0000 100%); border-right: 1px solid #ffaaaa; }
+        .mp-fill { background: linear-gradient(180deg, #5555ff 0%, #0000aa 100%); border-right: 1px solid #aaaaff; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 14px; color: #fff; text-shadow: 1px 1px 1px #000; }
         .hud-extra { display: flex; justify-content: space-between; font-size: 11px; color: #bbb; margin-top: 2px; font-weight: bold; }
         .hud-adena { color: #f1fa8c; }
 
         /* МЕНЮ */
         .top-menu { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; }
-        .menu-btn { background: rgba(20, 20, 25, 0.85); color: #d4af37; border: 1px solid #5a5035; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .menu-btn { background: rgba(20, 20, 25, 0.85); color: #d4af37; border: 1px solid #5a5035; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); transition: 0.1s; }
+        .menu-btn:active { background: #332d1f; border-color: #f1fa8c; color: #fff; transform: scale(0.95); }
 
         /* 4 ЯЧЕЙКИ */
         .quick-slots { position: absolute; bottom: 230px; right: 25px; display: flex; gap: 12px; }
-        .q-slot { width: 48px; height: 48px; background: rgba(20, 20, 25, 0.75); border: 1px solid #7a6b42; border-radius: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 24px; position: relative; }
-        .q-count { position: absolute; bottom: 3px; right: 5px; font-size: 11px; font-weight: 900; color: #fff; }
+        .q-slot { width: 48px; height: 48px; background: rgba(20, 20, 25, 0.75); border: 1px solid #7a6b42; border-radius: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 24px; box-shadow: inset 0 0 12px rgba(0,0,0,0.8), 0 5px 8px rgba(0,0,0,0.6); backdrop-filter: blur(4px); transition: 0.1s; position: relative; }
+        .q-slot:active { border-color: #f1fa8c; transform: scale(0.85); background: rgba(50, 50, 60, 0.9); }
+        .q-count { position: absolute; bottom: 3px; right: 5px; font-size: 11px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; }
 
         /* КРУГОВОЙ БЛОК СКИЛЛОВ */
         .skill-cluster { position: absolute; bottom: 30px; right: 30px; width: 220px; height: 220px; }
-        .action-btn { position: absolute; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; border: 2px solid #7a6b42; color: white; }
-        .attack-main { width: 95px; height: 95px; bottom: 0; right: 0; font-size: 42px; border-color: #d4af37; background: radial-gradient(circle, #8f2020, #300000); }
+        .action-btn { position: absolute; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; border: 2px solid #7a6b42; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.8); transition: 0.1s; }
+        .action-btn:active { transform: scale(0.85); border-color: #f1fa8c; box-shadow: 0 0 25px rgba(241, 250, 140, 0.6); }
+        .attack-main { width: 95px; height: 95px; bottom: 0; right: 0; font-size: 42px; border-color: #d4af37; background: radial-gradient(circle, #8f2020, #300000); box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 30px rgba(0,0,0,0.9); }
         .spell-1 { width: 65px; height: 65px; bottom: 5px; right: 125px; font-size: 28px; background: radial-gradient(circle, #224b75, #00102d); }
         .spell-2 { width: 65px; height: 65px; bottom: 95px; right: 105px; font-size: 28px; background: radial-gradient(circle, #754b22, #2d1000); }
         .spell-3 { width: 65px; height: 65px; bottom: 125px; right: 15px; font-size: 28px; background: radial-gradient(circle, #22753a, #002d0a); }
+        
+        /* Лоадер при загрузке модели */
+        #loading-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #d4af37; font-size: 20px; font-weight: bold; z-index: 20; text-shadow: 0 0 10px #000; }
     </style>
 </head>
 <body>
@@ -87,6 +100,7 @@
 
     <!-- ИГРОВОЙ ЭКРАН -->
     <div id="game-screen">
+        <div id="loading-text">Загрузка 3D мира...</div>
         <div id="3d-canvas-container"></div>
         <div id="camera-zone"></div>
         <div id="joystick-zone"></div>
@@ -103,8 +117,9 @@
             </div>
 
             <div class="top-menu interactive">
-                <div class="menu-btn" onpointerdown="alert('Инвентарь')">🎒 Инвентарь</div>
-                <div class="menu-btn" onpointerdown="alert('Магазин')">⚖️ Магазин</div>
+                <div class="menu-btn" onpointerdown="alert('Открыт Инвентарь')">🎒 Инвентарь</div>
+                <div class="menu-btn" onpointerdown="alert('Открыт Магазин')">⚖️ Магазин</div>
+                <div class="menu-btn" onpointerdown="alert('Настройки')">⚙️</div>
             </div>
 
             <div class="quick-slots interactive">
@@ -123,6 +138,7 @@
         </div>
     </div>
 
+    <!-- ЛОГИКА ИГРЫ -->
     <script>
         let tg = window.Telegram.WebApp;
         tg.ready();
@@ -138,83 +154,98 @@
             syncWithServer();
         }
 
+        // ПЕРЕМЕННЫЕ ДЛЯ 3D И АНИМАЦИЙ
         let scene, camera, renderer, playerMesh;
+        let mixer, idleAction, runAction, currentAction;
+        let clock = new THREE.Clock(); // Часы для синхронизации анимаций
+        
         let moveVector = { x: 0, z: 0 };
-        const playerSpeed = 0.12;
-        let cameraAngleX = 0; let cameraAngleY = 0.6; const cameraDistance = 14; 
+        const playerSpeed = 0.08;
+        let cameraAngleX = 0; let cameraAngleY = 0.6; const cameraDistance = 8; 
 
         function init3DWorld() {
             const container = document.getElementById('3d-canvas-container');
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x111118);
-            scene.fog = new THREE.Fog(0x111118, 15, 60); 
+            scene.fog = new THREE.Fog(0x111118, 10, 50); 
 
             camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
             dirLight.position.set(10, 20, 10);
             scene.add(dirLight);
 
             const gridHelper = new THREE.GridHelper(200, 200, 0x443c24, 0x222222);
             scene.add(gridHelper);
 
-            const geometry = new THREE.BoxGeometry(1, 2, 1);
-            const material = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
-            playerMesh = new THREE.Mesh(geometry, material);
-            playerMesh.position.y = 1;
-            scene.add(playerMesh);
+            // ЗАГРУЗКА НАСТОЯЩЕЙ 3D МОДЕЛИ (.GLB)
+            const loader = new THREE.GLTFLoader();
+            const modelUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb';
+            
+            loader.load(modelUrl, function (gltf) {
+                document.getElementById('loading-text').style.display = 'none'; // Убираем текст загрузки
+                
+                playerMesh = gltf.scene;
+                playerMesh.scale.set(1.5, 1.5, 1.5); // Увеличиваем размер под наш мир
+                scene.add(playerMesh);
 
+                // Настройка анимаций
+                mixer = new THREE.AnimationMixer(playerMesh);
+                
+                // В этой модели: 0 = Idle (Стоит), 1 = Run (Бежит), 3 = Walk (Шагает)
+                idleAction = mixer.clipAction(gltf.animations[0]); 
+                runAction = mixer.clipAction(gltf.animations[1]);
+                
+                idleAction.play(); // Сразу запускаем дыхание
+                currentAction = idleAction;
+            }, undefined, function (error) {
+                console.error('Ошибка загрузки модели:', error);
+                document.getElementById('loading-text').innerText = 'Ошибка загрузки 3D модели';
+            });
+
+            // ДЖОЙСТИК (Теперь управляет анимациями)
             const joystickZone = document.getElementById('joystick-zone');
             const manager = nipplejs.create({ zone: joystickZone, mode: 'dynamic', color: 'white', size: 120, opacity: 0.5 });
+            
             manager.on('move', function (evt, data) {
                 if (data && data.angle) {
                     const angle = data.angle.radian;
                     const force = Math.min(data.force, 1.5) / 1.5;
                     moveVector.x = Math.cos(angle) * force;
                     moveVector.z = -Math.sin(angle) * force;
-                }
-            });
-            manager.on('end', function () { moveVector.x = 0; moveVector.z = 0; });
-
-            const cameraZone = document.getElementById('camera-zone');
-            let activeTouchId = null;
-            let previousTouch = { x: 0, y: 0 };
-
-            cameraZone.addEventListener('touchstart', function(e) {
-                e.preventDefault(); 
-                if (activeTouchId !== null) return; 
-                const touch = e.changedTouches[0];
-                activeTouchId = touch.identifier;
-                previousTouch.x = touch.pageX;
-                previousTouch.y = touch.pageY;
-            }, {passive: false});
-
-            cameraZone.addEventListener('touchmove', function(e) {
-                e.preventDefault();
-                if (activeTouchId === null) return;
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    if (touch.identifier === activeTouchId) {
-                        cameraAngleX -= (touch.pageX - previousTouch.x) * 0.01;
-                        cameraAngleY += (touch.pageY - previousTouch.y) * 0.01;
-                        cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
-                        previousTouch.x = touch.pageX;
-                        previousTouch.y = touch.pageY;
-                        break;
+                    
+                    // ЕСЛИ ПОБЕЖАЛ -> ПЛАВНО ВКЛЮЧАЕМ АНИМАЦИЮ БЕГА
+                    if (currentAction !== runAction && mixer) {
+                        runAction.reset().play();
+                        runAction.crossFadeFrom(currentAction, 0.2, true);
+                        currentAction = runAction;
                     }
                 }
-            }, {passive: false});
-
-            cameraZone.addEventListener('touchend', function(e) {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === activeTouchId) { activeTouchId = null; break; }
+            });
+            
+            manager.on('end', function () { 
+                moveVector.x = 0; moveVector.z = 0; 
+                
+                // ЕСЛИ ОСТАНОВИЛСЯ -> ПЛАВНО ВКЛЮЧАЕМ АНИМАЦИЮ ОЖИДАНИЯ
+                if (currentAction !== idleAction && mixer) {
+                    idleAction.reset().play();
+                    idleAction.crossFadeFrom(currentAction, 0.2, true);
+                    currentAction = idleAction;
                 }
             });
+
+            // КАМЕРА
+            const cameraZone = document.getElementById('camera-zone');
+            let activeTouchId = null; let previousTouch = { x: 0, y: 0 };
+
+            cameraZone.addEventListener('touchstart', function(e) { e.preventDefault(); if (activeTouchId !== null) return; const touch = e.changedTouches[0]; activeTouchId = touch.identifier; previousTouch.x = touch.pageX; previousTouch.y = touch.pageY; }, {passive: false});
+            cameraZone.addEventListener('touchmove', function(e) { e.preventDefault(); if (activeTouchId === null) return; for (let i = 0; i < e.changedTouches.length; i++) { const touch = e.changedTouches[i]; if (touch.identifier === activeTouchId) { cameraAngleX -= (touch.pageX - previousTouch.x) * 0.01; cameraAngleY += (touch.pageY - previousTouch.y) * 0.01; cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY)); previousTouch.x = touch.pageX; previousTouch.y = touch.pageY; break; } } }, {passive: false});
+            cameraZone.addEventListener('touchend', function(e) { for (let i = 0; i < e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === activeTouchId) { activeTouchId = null; break; } } });
 
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
@@ -227,6 +258,11 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            let delta = clock.getDelta();
+            
+            // Обновляем миксер анимаций (чтобы персонаж дышал/бежал)
+            if (mixer) mixer.update(delta);
+
             if (playerMesh) {
                 if (Math.abs(moveVector.x) > 0 || Math.abs(moveVector.z) > 0) {
                     const c = Math.cos(cameraAngleX), s = Math.sin(cameraAngleX);
@@ -235,13 +271,16 @@
 
                     playerMesh.position.x += realX * playerSpeed;
                     playerMesh.position.z += realZ * playerSpeed;
+                    
+                    // Поворачиваем персонажа лицом по направлению бега
                     playerMesh.lookAt(new THREE.Vector3(playerMesh.position.x + realX, playerMesh.position.y, playerMesh.position.z + realZ));
                 }
 
+                // Камера облетает персонажа (смотрит чуть выше его ног, в район груди)
                 camera.position.x = playerMesh.position.x + cameraDistance * Math.sin(cameraAngleX) * Math.cos(cameraAngleY);
-                camera.position.y = playerMesh.position.y + cameraDistance * Math.sin(cameraAngleY);
+                camera.position.y = playerMesh.position.y + 1.5 + cameraDistance * Math.sin(cameraAngleY);
                 camera.position.z = playerMesh.position.z + cameraDistance * Math.cos(cameraAngleX) * Math.cos(cameraAngleY);
-                camera.lookAt(playerMesh.position);
+                camera.lookAt(playerMesh.position.x, playerMesh.position.y + 1.5, playerMesh.position.z);
             }
             renderer.render(scene, camera);
         }
@@ -307,29 +346,23 @@
         function sendAction(actionType) {
             syncWithServer(actionType);
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
-            if (playerMesh) { playerMesh.rotation.y += Math.PI * 2; playerMesh.position.y = 2; setTimeout(() => { playerMesh.position.y = 1; }, 150); }
+            
+            // Временная визуализация удара (так как в базовой модели Soldier нет анимации атаки)
+            if (playerMesh) { 
+                playerMesh.position.y = 0.5; 
+                setTimeout(() => { playerMesh.position.y = 0; }, 150); 
+            }
         }
 
         function useSkill(skillNumber) {
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            if (playerMesh) {
-                if (skillNumber === 1) playerMesh.material.color.setHex(0x5555ff); 
-                if (skillNumber === 2) playerMesh.material.color.setHex(0xff5555); 
-                if (skillNumber === 3) playerMesh.material.color.setHex(0x55ff55); 
-                setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 500); 
-            }
+            // Магический визуал (покраска) пока отключен, так как у сложных моделей другой тип материалов
         }
 
         function useItem(itemType) {
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            if (playerMesh) {
-                if (itemType === 'hp') { playerMesh.material.color.setHex(0x00ff00); setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 300); } 
-                else if (itemType === 'mp') { playerMesh.material.color.setHex(0x0000ff); setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 300); } 
-                else { playerMesh.material.color.setHex(0xffffff); setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 300); }
-            }
         }
 
-        syncWithServer();
     </script>
 </body>
 </html>
