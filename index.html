@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>L2 Telegram 3D MMORPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -11,17 +11,30 @@
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; touch-action: none; }
         
+        /* ПРИНУДИТЕЛЬНЫЙ ГОРИЗОНТАЛЬНЫЙ РЕЖИМ */
+        #rotate-device-screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0c0c0e; z-index: 9999; color: #d4af37; justify-content: center; align-items: center; text-align: center; font-size: 22px; font-weight: bold; flex-direction: column; }
+        .rotate-icon { font-size: 60px; margin-bottom: 20px; animation: spin 2s infinite ease-in-out; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(90deg); } }
+        
+        @media screen and (orientation: portrait) {
+            #rotate-device-screen { display: flex; }
+            #game-screen, #creation-screen { display: none !important; }
+        }
+
         /* Экран создания */
-        #creation-screen { display: none; padding: 20px; text-align: center; position: relative; z-index: 100; }
-        .creation-title { font-size: 22px; color: #f1fa8c; margin-bottom: 20px; }
-        .class-grid { display: flex; flex-direction: column; gap: 12px; }
-        .class-card { background: #18181c; border: 1px solid #d4af37; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #creation-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; padding: 20px; box-sizing: border-box; background: #000; position: relative; z-index: 100; }
+        .creation-title { font-size: 28px; color: #f1fa8c; margin-bottom: 30px; text-shadow: 0 0 10px rgba(241, 250, 140, 0.5); }
+        .class-grid { display: flex; flex-direction: row; gap: 20px; }
+        .class-card { background: #18181c; border: 2px solid #d4af37; padding: 20px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 18px; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3); transition: 0.2s; }
+        .class-card:active { transform: scale(0.9); }
         
         /* Игровой экран */
         #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
         #3d-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
-        #camera-zone { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 4; }
-        #joystick-zone { position: absolute; bottom: 0; left: 0; width: 40vw; height: 50vh; z-index: 5; }
+        
+        /* ЗОНЫ МУЛЬТИТАЧА */
+        #camera-zone { position: absolute; top: 0; right: 0; width: 60vw; height: 100vh; z-index: 4; } /* Правая часть для камеры */
+        #joystick-zone { position: absolute; bottom: 0; left: 0; width: 40vw; height: 100vh; z-index: 5; } /* Левая часть для джойстика */
 
         /* ИНТЕРФЕЙС */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
@@ -39,87 +52,37 @@
             border: 1px solid #332d1f; border-left: 2px solid #d4af37;
             box-shadow: 0 4px 10px rgba(0,0,0,0.7);
         }
-
         .avatar-box { position: relative; width: 56px; height: 56px; }
-        .avatar-img { 
-            width: 100%; height: 100%; border-radius: 50%; 
-            border: 2px solid #7a6b42; object-fit: cover; background: #222;
-        }
-        .level-badge {
-            position: absolute; bottom: -4px; right: -4px;
-            background: linear-gradient(180deg, #f1fa8c, #d4af37); color: #000; 
-            font-size: 11px; font-weight: 900;
-            width: 22px; height: 22px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            border: 2px solid #111; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
+        .avatar-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #7a6b42; object-fit: cover; background: #222; }
+        .level-badge { position: absolute; bottom: -4px; right: -4px; background: linear-gradient(180deg, #f1fa8c, #d4af37); color: #000; font-size: 11px; font-weight: 900; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #111; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .hud-info { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
         .hud-name { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 2px; text-shadow: 1px 1px 2px #000; letter-spacing: 0.5px;}
         .hud-class { color: #8be9fd; font-size: 10px; font-weight: normal; margin-left: 5px; }
-        
         .bar-container { position: relative; width: 100%; height: 14px; background: #1a1a1a; border-radius: 3px; border: 1px solid #000; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
         .bar-fill { height: 100%; transition: width 0.3s ease; }
         .hp-fill { background: linear-gradient(180deg, #ff5555 0%, #aa0000 100%); border-right: 1px solid #ffaaaa; }
         .mp-fill { background: linear-gradient(180deg, #5555ff 0%, #0000aa 100%); border-right: 1px solid #aaaaff; }
         .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 14px; color: #fff; text-shadow: 1px 1px 1px #000; }
-
         .hud-extra { display: flex; justify-content: space-between; font-size: 11px; color: #bbb; margin-top: 2px; font-weight: bold; }
         .hud-adena { color: #f1fa8c; }
 
-        /* =========================================
-           МЕНЮ С НАДПИСЯМИ (Справа вверху)
-           ========================================= */
+        /* МЕНЮ */
         .top-menu { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; }
-        .menu-btn { 
-            background: rgba(20, 20, 25, 0.85); color: #d4af37; 
-            border: 1px solid #5a5035; padding: 6px 14px; border-radius: 6px; 
-            font-size: 13px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; gap: 6px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.6); transition: 0.1s;
-        }
+        .menu-btn { background: rgba(20, 20, 25, 0.85); color: #d4af37; border: 1px solid #5a5035; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); transition: 0.1s; }
         .menu-btn:active { background: #332d1f; border-color: #f1fa8c; color: #fff; transform: scale(0.95); }
 
-        /* =========================================
-           4 ЯЧЕЙКИ БЫСТРОГО ДОСТУПА (Увеличены и раздвинуты)
-           ========================================= */
-        .quick-slots { 
-            position: absolute; bottom: 230px; right: 25px; 
-            display: flex; gap: 12px; 
-        }
-        .q-slot { 
-            width: 48px; height: 48px; background: rgba(20, 20, 25, 0.75);
-            border: 1px solid #7a6b42; border-radius: 10px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center; font-size: 24px;
-            box-shadow: inset 0 0 12px rgba(0,0,0,0.8), 0 5px 8px rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px); /* Легкий эффект стекла */
-            transition: 0.15s ease-out; position: relative;
-        }
+        /* 4 ЯЧЕЙКИ */
+        .quick-slots { position: absolute; bottom: 230px; right: 25px; display: flex; gap: 12px; }
+        .q-slot { width: 48px; height: 48px; background: rgba(20, 20, 25, 0.75); border: 1px solid #7a6b42; border-radius: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 24px; box-shadow: inset 0 0 12px rgba(0,0,0,0.8), 0 5px 8px rgba(0,0,0,0.6); backdrop-filter: blur(4px); transition: 0.1s; position: relative; }
         .q-slot:active { border-color: #f1fa8c; transform: scale(0.85); background: rgba(50, 50, 60, 0.9); }
         .q-count { position: absolute; bottom: 3px; right: 5px; font-size: 11px; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; }
 
-        /* =========================================
-           КРУГОВОЙ БЛОК СКИЛЛОВ (Увеличен масштаб и отступы)
-           ========================================= */
+        /* КРУГОВОЙ БЛОК СКИЛЛОВ */
         .skill-cluster { position: absolute; bottom: 30px; right: 30px; width: 220px; height: 220px; }
-        
-        .action-btn {
-            position: absolute; border-radius: 50%; font-weight: bold; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            border: 2px solid #7a6b42; color: white;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.8);
-            transition: 0.15s ease-out;
-        }
+        .action-btn { position: absolute; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; border: 2px solid #7a6b42; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.8); transition: 0.1s; }
         .action-btn:active { transform: scale(0.85); border-color: #f1fa8c; box-shadow: 0 0 25px rgba(241, 250, 140, 0.6); }
 
-        /* Огромная кнопка Атаки */
-        .attack-main { 
-            width: 95px; height: 95px; bottom: 0; right: 0; font-size: 42px;
-            border-color: #d4af37; background: radial-gradient(circle, #8f2020, #300000);
-            box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 30px rgba(0,0,0,0.9);
-        }
-
-        /* 3 Спелла (Раздвинуты по более широкой дуге) */
+        .attack-main { width: 95px; height: 95px; bottom: 0; right: 0; font-size: 42px; border-color: #d4af37; background: radial-gradient(circle, #8f2020, #300000); box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 30px rgba(0,0,0,0.9); }
         .spell-1 { width: 65px; height: 65px; bottom: 5px; right: 125px; font-size: 28px; background: radial-gradient(circle, #224b75, #00102d); }
         .spell-2 { width: 65px; height: 65px; bottom: 95px; right: 105px; font-size: 28px; background: radial-gradient(circle, #754b22, #2d1000); }
         .spell-3 { width: 65px; height: 65px; bottom: 125px; right: 15px; font-size: 28px; background: radial-gradient(circle, #22753a, #002d0a); }
@@ -127,13 +90,19 @@
 </head>
 <body>
 
+    <!-- ЭКРАН С ПРОСЬБОЙ ПЕРЕВЕРНУТЬ ТЕЛЕФОН -->
+    <div id="rotate-device-screen">
+        <div class="rotate-icon">🔄</div>
+        <div>Пожалуйста, переверните телефон<br>для погружения в игру</div>
+    </div>
+
     <div id="creation-screen">
         <div class="creation-title">Выбор Пути Героя</div>
         <div class="class-grid">
-            <div class="class-card" onclick="createCharacter('warrior')">⚔️ Воин</div>
-            <div class="class-card" onclick="createCharacter('archer')">🏹 Стрелок</div>
-            <div class="class-card" onclick="createCharacter('mage')">🔮 Маг</div>
-            <div class="class-card" onclick="createCharacter('overlord')">📜 Оверлорд</div>
+            <div class="class-card" onpointerdown="createCharacter('warrior')">⚔️ Воин</div>
+            <div class="class-card" onpointerdown="createCharacter('archer')">🏹 Стрелок</div>
+            <div class="class-card" onpointerdown="createCharacter('mage')">🔮 Маг</div>
+            <div class="class-card" onpointerdown="createCharacter('overlord')">📜 Оверлорд</div>
         </div>
     </div>
 
@@ -143,12 +112,8 @@
         <div id="joystick-zone"></div>
         
         <div id="ui-layer">
-            
             <div class="player-hud interactive">
-                <div class="avatar-box">
-                    <img id="hud-avatar" src="https://via.placeholder.com/60" class="avatar-img">
-                    <div class="level-badge" id="level">1</div>
-                </div>
+                <div class="avatar-box"><img id="hud-avatar" src="https://via.placeholder.com/60" class="avatar-img"><div class="level-badge" id="level">1</div></div>
                 <div class="hud-info">
                     <div class="hud-name"><span id="username">Герой</span><span id="class_type" class="hud-class">MAGE</span></div>
                     <div class="bar-container"><div class="bar-fill hp-fill" id="hp-bar-width" style="width: 100%;"></div><div class="bar-text"><span id="hp">100</span> / <span id="max_hp">100</span></div></div>
@@ -158,30 +123,38 @@
             </div>
 
             <div class="top-menu interactive">
-                <div class="menu-btn" onclick="alert('Открыт Инвентарь')">🎒 Инвентарь</div>
-                <div class="menu-btn" onclick="alert('Открыт Магазин')">⚖️ Магазин</div>
-                <div class="menu-btn" onclick="alert('Настройки')">⚙️</div>
+                <div class="menu-btn" onpointerdown="alert('Открыт Инвентарь')">🎒 Инвентарь</div>
+                <div class="menu-btn" onpointerdown="alert('Открыт Магазин')">⚖️ Магазин</div>
+                <div class="menu-btn" onpointerdown="alert('Настройки')">⚙️</div>
             </div>
 
             <div class="quick-slots interactive">
-                <div class="q-slot" onclick="useItem('hp')">❤️<span class="q-count">50</span></div>
-                <div class="q-slot" onclick="useItem('mp')">💙<span class="q-count">30</span></div>
-                <div class="q-slot" onclick="useItem('scroll')">📜<span class="q-count">5</span></div>
-                <div class="q-slot" onclick="useItem('buff')">💪<span class="q-count">10</span></div>
+                <div class="q-slot" onpointerdown="useItem('hp')">❤️<span class="q-count">50</span></div>
+                <div class="q-slot" onpointerdown="useItem('mp')">💙<span class="q-count">30</span></div>
+                <div class="q-slot" onpointerdown="useItem('scroll')">📜<span class="q-count">5</span></div>
+                <div class="q-slot" onpointerdown="useItem('buff')">💪<span class="q-count">10</span></div>
             </div>
 
+            <!-- ИСПОЛЬЗУЕМ ONPOINTERDOWN ДЛЯ МГНОВЕННОГО ОТКЛИКА В МУЛЬТИТАЧЕ -->
             <div class="skill-cluster interactive">
-                <div class="action-btn spell-1" onclick="useSkill(1)">⚡</div>
-                <div class="action-btn spell-2" onclick="useSkill(2)">🔥</div>
-                <div class="action-btn spell-3" onclick="useSkill(3)">🛡️</div>
-                <div class="action-btn attack-main" onclick="sendAction('attack')">⚔️</div>
+                <div class="action-btn spell-1" onpointerdown="useSkill(1)">⚡</div>
+                <div class="action-btn spell-2" onpointerdown="useSkill(2)">🔥</div>
+                <div class="action-btn spell-3" onpointerdown="useSkill(3)">🛡️</div>
+                <div class="action-btn attack-main" onpointerdown="sendAction('attack')">⚔️</div>
             </div>
-            
         </div>
     </div>
 
-    <!-- THREE.JS Скрипт (Остался без изменений) -->
     <script>
+        // ИНИЦИАЛИЗАЦИЯ TELEGRAM И ПОЛНОЭКРАННОГО РЕЖИМА
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.disableVerticalSwipes();
+        
+        // Пытаемся заблокировать экран в горизонтальном положении (работает на новых версиях ТГ)
+        try { if (tg.requestFullscreen) tg.requestFullscreen(); } catch (e) {}
+        try { if (tg.lockOrientation) tg.lockOrientation('landscape'); } catch (e) {}
+
         let scene, camera, renderer, playerMesh;
         let moveVector = { x: 0, z: 0 };
         const playerSpeed = 0.12;
@@ -196,7 +169,7 @@
             scene.fog = new THREE.Fog(0x111118, 15, 60); 
 
             camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
@@ -215,6 +188,7 @@
             playerMesh.position.y = 1;
             scene.add(playerMesh);
 
+            // ИСТИННЫЙ МУЛЬТИТАЧ ДЛЯ ДЖОЙСТИКА (Nipple.js работает автономно)
             const joystickZone = document.getElementById('joystick-zone');
             const manager = nipplejs.create({ zone: joystickZone, mode: 'dynamic', color: 'white', size: 120, opacity: 0.5 });
             manager.on('move', function (evt, data) {
@@ -227,33 +201,56 @@
             });
             manager.on('end', function () { moveVector.x = 0; moveVector.z = 0; });
 
+            // ИСТИННЫЙ МУЛЬТИТАЧ ДЛЯ КАМЕРЫ (Трекает конкретный палец)
             const cameraZone = document.getElementById('camera-zone');
-            let isDragging = false;
+            let activeTouchId = null;
             let previousTouch = { x: 0, y: 0 };
 
-            function onPointerDown(e) {
-                isDragging = true;
-                previousTouch.x = e.touches ? e.touches[0].pageX : e.pageX;
-                previousTouch.y = e.touches ? e.touches[0].pageY : e.pageY;
-            }
-            function onPointerMove(e) {
-                if (!isDragging) return;
-                const currentX = e.touches ? e.touches[0].pageX : e.pageX;
-                const currentY = e.touches ? e.touches[0].pageY : e.pageY;
-                cameraAngleX -= (currentX - previousTouch.x) * 0.01; 
-                cameraAngleY += (currentY - previousTouch.y) * 0.01; 
-                cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
-                previousTouch.x = currentX;
-                previousTouch.y = currentY;
-            }
-            function onPointerUp() { isDragging = false; }
+            cameraZone.addEventListener('touchstart', function(e) {
+                e.preventDefault(); // Предотвращаем конфликты
+                if (activeTouchId !== null) return; 
+                const touch = e.changedTouches[0];
+                activeTouchId = touch.identifier;
+                previousTouch.x = touch.pageX;
+                previousTouch.y = touch.pageY;
+            }, {passive: false});
 
-            cameraZone.addEventListener('mousedown', onPointerDown);
-            cameraZone.addEventListener('mousemove', onPointerMove);
-            window.addEventListener('mouseup', onPointerUp);
-            cameraZone.addEventListener('touchstart', onPointerDown);
-            cameraZone.addEventListener('touchmove', onPointerMove);
-            window.addEventListener('touchend', onPointerUp);
+            cameraZone.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (activeTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === activeTouchId) {
+                        cameraAngleX -= (touch.pageX - previousTouch.x) * 0.01;
+                        cameraAngleY += (touch.pageY - previousTouch.y) * 0.01;
+                        cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
+                        previousTouch.x = touch.pageX;
+                        previousTouch.y = touch.pageY;
+                        break;
+                    }
+                }
+            }, {passive: false});
+
+            cameraZone.addEventListener('touchend', function(e) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === activeTouchId) {
+                        activeTouchId = null;
+                        break;
+                    }
+                }
+            });
+
+            // Для тестов на ПК (Мышка)
+            let isDragging = false;
+            cameraZone.addEventListener('mousedown', (e) => { isDragging = true; previousTouch.x = e.pageX; previousTouch.y = e.pageY; });
+            cameraZone.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                cameraAngleX -= (e.pageX - previousTouch.x) * 0.01;
+                cameraAngleY += (e.pageY - previousTouch.y) * 0.01;
+                cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
+                previousTouch.x = e.pageX; previousTouch.y = e.pageY;
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
 
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
@@ -287,12 +284,8 @@
         }
     </script>
 
-    <!-- СЕРВЕР И ЛОГИКА UI -->
+    <!-- СЕРВЕР И UI ЛОГИКА -->
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.disableVerticalSwipes(); 
-
         let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
         let telegramId = user ? user.id.toString() : "123456789";
         let firstName = user ? (user.first_name || "Герой") : "Тестовый Герой";
@@ -309,7 +302,7 @@
             .then(data => {
                 if (data.success) {
                     if (data.needs_creation) {
-                        document.getElementById('creation-screen').style.display = 'block';
+                        document.getElementById('creation-screen').style.display = 'flex';
                         document.getElementById('game-screen').style.display = 'none';
                     } else if (data.user) {
                         document.getElementById('creation-screen').style.display = 'none';
@@ -358,7 +351,7 @@
 
         function sendAction(actionType) {
             syncWithServer(actionType);
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             
             if (playerMesh) {
                 playerMesh.rotation.y += Math.PI * 2;
@@ -368,7 +361,7 @@
         }
 
         function useSkill(skillNumber) {
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             if (playerMesh) {
                 if (skillNumber === 1) playerMesh.material.color.setHex(0x5555ff); 
                 if (skillNumber === 2) playerMesh.material.color.setHex(0xff5555); 
