@@ -5,45 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>L2 Telegram 3D MMORPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключаем 3D движок Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Подключаем библиотеку для виртуального джойстика -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     
     <style>
-        body { background-color: #0c0c0e; color: #d4af37; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; padding: 0; margin: 0; overflow: hidden; }
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; }
         
-        #creation-screen { display: none; padding: 10px; }
-        .creation-title { font-size: 20px; color: #f1fa8c; margin-bottom: 15px; }
-        .class-grid { display: flex; flex-direction: column; gap: 10px; padding: 0 15px; }
-        .class-card { background: #18181c; border: 1px solid #443c24; padding: 15px; border-radius: 8px; cursor: pointer; color: #fff; font-weight: bold; }
+        /* Экран создания */
+        #creation-screen { display: none; padding: 20px; text-align: center; position: relative; z-index: 100; }
+        .creation-title { font-size: 22px; color: #f1fa8c; margin-bottom: 20px; }
+        .class-grid { display: flex; flex-direction: column; gap: 12px; }
+        .class-card { background: #18181c; border: 1px solid #d4af37; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
+        /* Игровой экран */
         #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
         
-        /* Контейнер для 3D мира */
-        #3d-container { width: 100%; height: 55vh; position: relative; background: #000; border-bottom: 2px solid #d4af37; }
+        /* 1. ФОНОВЫЙ 3D-МИР (Заполняет весь экран) */
+        #3d-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         
-        /* Зона для джойстика поверх 3D мира */
-        #joystick-zone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
+        /* 2. ЗОНА ДЖОЙСТИКА (Только левая нижняя четверть экрана) */
+        #joystick-zone { position: absolute; bottom: 0; left: 0; width: 50vw; height: 50vh; z-index: 5; }
 
-        /* Интерфейс (UI) */
-        #ui-container { padding: 10px; height: 45vh; overflow-y: auto; background: #0c0c0e; }
-        .stats-box { background: #16161a; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; text-align: left; font-size: 13px; }
-        .stats-box p { margin: 5px 0; }
+        /* 3. ИНТЕРФЕЙС ПОВЕРХ 3D-МИРА */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
+        .interactive { pointer-events: auto; } /* Чтобы кнопки можно было нажимать */
+
+        /* Статы в левом верхнем углу */
+        .stats-panel { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.6); padding: 8px 12px; border-radius: 8px; border: 1px solid #443c24; font-size: 12px; }
+        .stats-panel p { margin: 4px 0; }
         .highlight { color: #50fa7b; font-weight: bold; }
-        
-        .btn { 
-            background: linear-gradient(to bottom, #7a1c1c, #4d1010); 
-            color: white; padding: 12px; border: 1px solid #d4af37; width: 100%; 
-            font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;
+
+        /* Главное меню в правом верхнем углу (Инвентарь, Магазин) */
+        .top-menu { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
+        .menu-btn { background: rgba(20, 20, 20, 0.8); color: #d4af37; border: 1px solid #d4af37; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .menu-btn:active { background: #d4af37; color: #000; }
+
+        /* Боевые кнопки в правом нижнем углу */
+        .action-panel { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+        .attack-btn { 
+            background: radial-gradient(circle, #7a1c1c, #4d1010); 
+            color: white; border: 2px solid #d4af37; width: 75px; height: 75px; 
+            border-radius: 50%; font-size: 14px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+            display: flex; justify-content: center; align-items: center; text-align: center;
         }
-        .btn:active { background: #942424; transform: scale(0.98); }
+        .attack-btn:active { transform: scale(0.9); box-shadow: 0 0 25px rgba(212, 175, 55, 0.6); }
     </style>
 </head>
 <body>
-    <!-- Экран создания персонажа -->
+
+    <!-- Меню создания -->
     <div id="creation-screen">
-        <div class="creation-title">Создание персонажа</div>
+        <div class="creation-title">Выбор Пути Героя</div>
         <div class="class-grid">
             <div class="class-card" onclick="createCharacter('warrior')">⚔️ Воин (Gladiator)</div>
             <div class="class-card" onclick="createCharacter('archer')">🏹 Стрелок (Hawkeye)</div>
@@ -52,110 +65,124 @@
         </div>
     </div>
 
-    <!-- Основной игровой экран -->
+    <!-- Игровой мир -->
     <div id="game-screen">
         
-        <!-- Окно 3D движка и джойстик -->
-        <div id="3d-container">
-            <div id="joystick-zone"></div>
-        </div>
+        <!-- 1. 3D Движок -->
+        <div id="3d-canvas-container"></div>
         
-        <!-- Игровой интерфейс (Меню, статы, кнопки) -->
-        <div id="ui-container">
-            <button class="btn" onclick="sendAction('attack')">⚔️ Атаковать (Тест)</button>
+        <!-- 2. Зона для пальца (Джойстик появится только тут) -->
+        <div id="joystick-zone"></div>
+        
+        <!-- 3. UI Интерфейс -->
+        <div id="ui-layer">
             
-            <div class="stats-box">
-                <p>Игрок: <span id="username" class="highlight"></span> [<span id="class_type" style="color:#ffb86c;"></span>]</p>
-                <p>Уровень: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
-                <p>Адена: <span id="adena" style="color: #f1fa8c;">0</span></p>
-                <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span> | MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
+            <!-- Статы (Слева вверху) -->
+            <div class="stats-panel interactive">
+                <p><span id="username" class="highlight"></span> [<span id="class_type" style="color:#ffb86c;"></span>]</p>
+                <p>Ур: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
+                <p style="color: #f1fa8c;">Адена: <span id="adena">0</span></p>
+                <p style="color: #ff5555;">HP: <span id="hp">100</span>/<span id="max_hp">100</span></p>
+                <p style="color: #5555ff;">MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
+            </div>
+
+            <!-- Игровое меню (Справа вверху) -->
+            <div class="top-menu interactive">
+                <button class="menu-btn" onclick="alert('Открыт Инвентарь!')">🎒 Инвентарь</button>
+                <button class="menu-btn" onclick="alert('Открыт Магазин!')">⚖️ Магазин</button>
+            </div>
+
+            <!-- Кнопки действий (Справа внизу) -->
+            <div class="action-panel interactive">
+                <button class="attack-btn" onclick="sendAction('attack')">⚔️<br>Удар</button>
             </div>
             
-            <div class="stats-box" id="stats-container"></div>
         </div>
     </div>
 
-    <!-- ЛОГИКА 3D ДВИЖКА (THREE.JS) -->
+    <!-- THREE.JS Скрипт -->
     <script>
         let scene, camera, renderer, playerMesh;
         let moveVector = { x: 0, z: 0 };
-        const playerSpeed = 0.15;
+        const playerSpeed = 0.12;
 
         function init3DWorld() {
-            const container = document.getElementById('3d-container');
+            const container = document.getElementById('3d-canvas-container');
             
-            // 1. Создаем сцену
+            // Сцена и туман
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a24); // Темный фон
-            scene.fog = new THREE.Fog(0x1a1a24, 10, 50); // Туман вдалеке для атмосферы
+            scene.background = new THREE.Color(0x111118);
+            scene.fog = new THREE.Fog(0x111118, 15, 60); 
 
-            // 2. Создаем камеру (вид от 3-го лица)
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            // Камера
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
             
-            // 3. Создаем рендерер
+            // Рендерер
             renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            // 4. Освещение
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            // Свет
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
             dirLight.position.set(10, 20, 10);
             scene.add(dirLight);
 
-            // 5. Создаем пол (Сетка / Grid)
-            const gridHelper = new THREE.GridHelper(100, 100, 0xd4af37, 0x444444);
+            // Пол (Бесконечная сетка)
+            const gridHelper = new THREE.GridHelper(200, 200, 0x443c24, 0x222222);
             scene.add(gridHelper);
 
-            // 6. ВРЕМЕННАЯ 3D-модель игрока (Золотой блок, пока не загрузим реального персонажа)
+            // Временный Игрок (Золотой блок)
             const geometry = new THREE.BoxGeometry(1, 2, 1);
             const material = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
             playerMesh = new THREE.Mesh(geometry, material);
-            playerMesh.position.y = 1; // Поднимаем над землей
+            playerMesh.position.y = 1;
             scene.add(playerMesh);
 
-            // 7. Инициализация джойстика
+            // Джойстик (Только в левой зоне)
             const joystickZone = document.getElementById('joystick-zone');
             const manager = nipplejs.create({
                 zone: joystickZone,
-                mode: 'dynamic', // Появляется там, куда нажмет палец
+                mode: 'dynamic', 
                 color: 'white',
-                size: 100
+                size: 120,
+                opacity: 0.5
             });
 
-            // Обработка движения джойстика
             manager.on('move', function (evt, data) {
                 if (data && data.angle) {
                     const angle = data.angle.radian;
-                    const force = Math.min(data.force, 1);
-                    // Переводим 2D угол джойстика в 3D координаты (X и Z)
+                    const force = Math.min(data.force, 1.5) / 1.5;
                     moveVector.x = Math.cos(angle) * force;
                     moveVector.z = -Math.sin(angle) * force;
                 }
             });
 
-            // Остановка при отпускании пальца
             manager.on('end', function () {
                 moveVector.x = 0;
                 moveVector.z = 0;
             });
 
-            // 8. Запуск цикла анимации
+            // Автоматическая подгонка экрана при перевороте телефона
+            window.addEventListener('resize', onWindowResize, false);
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
             animate();
         }
 
-        // Цикл рендеринга (60 кадров в секунду)
         function animate() {
             requestAnimationFrame(animate);
 
             if (playerMesh) {
-                // Двигаем игрока, если джойстик нажат
                 if (Math.abs(moveVector.x) > 0 || Math.abs(moveVector.z) > 0) {
                     playerMesh.position.x += moveVector.x * playerSpeed;
                     playerMesh.position.z += moveVector.z * playerSpeed;
 
-                    // Поворачиваем персонажа лицом по направлению бега
                     const targetPosition = new THREE.Vector3(
                         playerMesh.position.x + moveVector.x,
                         playerMesh.position.y,
@@ -164,28 +191,27 @@
                     playerMesh.lookAt(targetPosition);
                 }
 
-                // Камера плавно следует за игроком (сверху и сзади)
+                // Улучшенная позиция камеры (как в мобильных RPG)
                 camera.position.x = playerMesh.position.x;
-                camera.position.y = playerMesh.position.y + 8; // Высота камеры
-                camera.position.z = playerMesh.position.z + 10; // Отдаление камеры
-                camera.lookAt(playerMesh.position); // Камера смотрит на игрока
+                camera.position.y = playerMesh.position.y + 12; // Высота над головой
+                camera.position.z = playerMesh.position.z + 14; // Отдаление
+                camera.lookAt(playerMesh.position);
             }
 
             renderer.render(scene, camera);
         }
     </script>
 
-    <!-- СЕРВЕР И ИНТЕРФЕЙС (NETLIFY & SUPABASE) -->
+    <!-- СЕРВЕР И ИНТЕРФЕЙС -->
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        tg.disableVerticalSwipes(); // Запрещаем Телеграму закрывать окно при свайпах джойстика
+        tg.disableVerticalSwipes(); 
 
         let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
         let telegramId = user ? user.id.toString() : "123456789";
         let firstName = user ? (user.first_name || "Герой") : "Тестовый Герой";
         const API_URL = '/.netlify/functions/api';
-
         let is3DInitialized = false;
 
         function syncWithServer(action = '', classType = '') {
@@ -205,7 +231,6 @@
                         document.getElementById('game-screen').style.display = 'block';
                         updateUI(data.user);
                         
-                        // Запускаем 3D мир только когда игрок успешно вошел в игру
                         if (!is3DInitialized) {
                             init3DWorld();
                             is3DInitialized = true;
@@ -231,24 +256,17 @@
             document.getElementById('max_hp').innerText = u.max_hp;
             document.getElementById('mp').innerText = u.mp;
             document.getElementById('max_mp').innerText = u.max_mp;
-
-            let statsHTML = '';
-            if (u.p_atk > 0) {
-                statsHTML += `<p>⚔️ P. Atk: <b>${u.p_atk}</b> | 🛡️ P. Def: <b>${u.p_def}</b></p>`;
-            } else {
-                statsHTML += `<p>🔮 M. Atk: <b>${u.m_atk}</b> | 🛡️ M. Def: <b>${u.m_def}</b></p>`;
-            }
-            document.getElementById('stats-container').innerHTML = statsHTML;
         }
 
         function sendAction(actionType) {
             syncWithServer(actionType);
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             
-            // Временная анимация прыжка (для теста кнопки атаки)
+            // Временная анимация удара кубика
             if (playerMesh && actionType === 'attack') {
-                playerMesh.position.y = 2; // Подпрыгиваем
-                setTimeout(() => { playerMesh.position.y = 1; }, 150); // Падаем обратно
+                playerMesh.rotation.y += Math.PI * 2; // Круговой удар
+                playerMesh.position.y = 2; 
+                setTimeout(() => { playerMesh.position.y = 1; }, 150); 
             }
         }
 
