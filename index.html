@@ -9,48 +9,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     
     <style>
-        /* ИСКУСТВЕННЫЙ АВТО-ПОВОРОТ (Игра всегда выглядит как горизонтальная) */
-        html, body {
-            width: 100vw; height: 100vh;
-            margin: 0; padding: 0;
-            background-color: #000; color: #fff;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            overflow: hidden; user-select: none; touch-action: none;
-        }
-
-        #app-wrapper {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 100vh; height: 100vw;
-            transform: translate(-50%, -50%) rotate(90deg);
-            transform-origin: center center;
-            overflow: hidden;
-            background: #0c0c0e;
-        }
-
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; touch-action: none; }
+        
         /* СТАРТОВЫЙ ЭКРАН */
-        #start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; position: absolute; top: 0; left: 0; background: #0c0c0e; z-index: 10000; }
+        #start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; background: #0c0c0e; z-index: 10000; }
         .start-logo { font-size: 32px; color: #d4af37; font-weight: bold; margin-bottom: 40px; text-shadow: 0 0 20px rgba(212, 175, 55, 0.6); text-transform: uppercase; letter-spacing: 2px;}
         .play-btn { background: radial-gradient(circle, #7a1c1c, #300000); border: 2px solid #d4af37; color: #fff; font-size: 24px; font-weight: bold; padding: 20px 60px; border-radius: 12px; cursor: pointer; box-shadow: 0 0 30px rgba(212, 175, 55, 0.4); }
 
-        /* Экран создания */
-        #creation-screen { display: none; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; background: #000; position: absolute; top: 0; left: 0; z-index: 100; }
+        /* ЭКРАН СОЗДАНИЯ */
+        #creation-screen { display: none; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; padding: 20px; box-sizing: border-box; background: #000; position: fixed; top: 0; left: 0; z-index: 100; }
         .creation-title { font-size: 28px; color: #f1fa8c; margin-bottom: 30px; }
         .class-grid { display: flex; flex-direction: row; gap: 20px; }
         .class-card { background: #18181c; border: 2px solid #d4af37; padding: 20px 40px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 18px; }
         
-        /* Игровой экран */
-        #game-screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-        #3d-canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        /* ИГРОВОЙ ЭКРАН */
+        #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
+        #3d-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         
-        #camera-zone { position: absolute; top: 0; right: 0; width: 60%; height: 100%; z-index: 4; } 
-        #joystick-zone { position: absolute; bottom: 0; left: 0; width: 40%; height: 100%; z-index: 5; } 
+        #camera-zone { position: absolute; top: 0; right: 0; width: 60vw; height: 100vh; z-index: 4; } 
+        #joystick-zone { position: absolute; bottom: 0; left: 0; width: 40vw; height: 100vh; z-index: 5; } 
 
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
         .interactive { pointer-events: auto; } 
 
         /* HUD ИГРОКА */
-        .player-hud { position: absolute; top: 25px; left: 25px; display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(15,15,20,0.95) 0%, rgba(15,15,20,0.6) 100%); padding: 6px 20px 6px 6px; border-radius: 40px 10px 10px 40px; border: 1px solid #332d1f; border-left: 2px solid #d4af37; box-shadow: 0 4px 10px rgba(0,0,0,0.7); }
+        .player-hud { position: absolute; top: 15px; left: 15px; display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(15,15,20,0.95) 0%, rgba(15,15,20,0.6) 100%); padding: 6px 20px 6px 6px; border-radius: 40px 10px 10px 40px; border: 1px solid #332d1f; border-left: 2px solid #d4af37; box-shadow: 0 4px 10px rgba(0,0,0,0.7); }
         .avatar-box { position: relative; width: 56px; height: 56px; }
         .avatar-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #7a6b42; object-fit: cover; background: #222; }
         .level-badge { position: absolute; bottom: -4px; right: -4px; background: linear-gradient(180deg, #f1fa8c, #d4af37); color: #000; font-size: 11px; font-weight: 900; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #111; }
@@ -66,7 +49,7 @@
         .hud-adena { color: #f1fa8c; }
 
         /* МЕНЮ */
-        .top-menu { position: absolute; top: 25px; right: 25px; display: flex; gap: 8px; }
+        .top-menu { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; }
         .menu-btn { background: rgba(20, 20, 25, 0.85); color: #d4af37; border: 1px solid #5a5035; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
 
         /* 4 ЯЧЕЙКИ */
@@ -85,64 +68,59 @@
 </head>
 <body>
 
-    <!-- ВСЕ ПРИЛОЖЕНИЕ ЗАКРЫТО В СПЕЦИАЛЬНЫЙ КОНТЕЙНЕР, КОТОРЫЙ РАЗВЕРНУТ НА 90 ГРАДУСОВ -->
-    <div id="app-wrapper">
+    <!-- СТАРТОВЫЙ ЭКРАН -->
+    <div id="start-screen">
+        <div class="start-logo">Lineage II Mobile</div>
+        <button class="play-btn" onpointerdown="enterGame()">▶ ВОЙТИ В МИР</button>
+    </div>
 
-        <!-- СТАРТОВЫЙ ЭКРАН -->
-        <div id="start-screen">
-            <div class="start-logo">Lineage II Mobile</div>
-            <button class="play-btn" onpointerdown="enterGame()">▶ ВОЙТИ В МИР</button>
+    <!-- ЭКРАН СОЗДАНИЯ -->
+    <div id="creation-screen">
+        <div class="creation-title">Выбор Пути Героя</div>
+        <div class="class-grid">
+            <div class="class-card" onpointerdown="createCharacter('warrior')">⚔️ Воин</div>
+            <div class="class-card" onpointerdown="createCharacter('archer')">🏹 Стрелок</div>
+            <div class="class-card" onpointerdown="createCharacter('mage')">🔮 Маг</div>
+            <div class="class-card" onpointerdown="createCharacter('overlord')">📜 Оверлорд</div>
         </div>
+    </div>
 
-        <!-- ЭКРАН СОЗДАНИЯ -->
-        <div id="creation-screen">
-            <div class="creation-title">Выбор Пути Героя</div>
-            <div class="class-grid">
-                <div class="class-card" onpointerdown="createCharacter('warrior')">⚔️ Воин</div>
-                <div class="class-card" onpointerdown="createCharacter('archer')">🏹 Стрелок</div>
-                <div class="class-card" onpointerdown="createCharacter('mage')">🔮 Маг</div>
-                <div class="class-card" onpointerdown="createCharacter('overlord')">📜 Оверлорд</div>
-            </div>
-        </div>
-
-        <!-- ИГРОВОЙ ЭКРАН -->
-        <div id="game-screen">
-            <div id="3d-canvas-container"></div>
-            <div id="camera-zone"></div>
-            <div id="joystick-zone"></div>
-            
-            <div id="ui-layer">
-                <div class="player-hud interactive">
-                    <div class="avatar-box"><img id="hud-avatar" src="https://via.placeholder.com/60" class="avatar-img"><div class="level-badge" id="level">1</div></div>
-                    <div class="hud-info">
-                        <div class="hud-name"><span id="username">Герой</span><span id="class_type" class="hud-class">MAGE</span></div>
-                        <div class="bar-container"><div class="bar-fill hp-fill" id="hp-bar-width" style="width: 100%;"></div><div class="bar-text"><span id="hp">100</span> / <span id="max_hp">100</span></div></div>
-                        <div class="bar-container"><div class="bar-fill mp-fill" id="mp-bar-width" style="width: 100%;"></div><div class="bar-text"><span id="mp">50</span> / <span id="max_mp">50</span></div></div>
-                        <div class="hud-extra"><span class="hud-adena">💎 <span id="adena">0</span></span><span>EXP: <span id="exp">0</span></span></div>
-                    </div>
-                </div>
-
-                <div class="top-menu interactive">
-                    <div class="menu-btn" onpointerdown="alert('Инвентарь')">🎒 Инвентарь</div>
-                    <div class="menu-btn" onpointerdown="alert('Магазин')">⚖️ Магазин</div>
-                </div>
-
-                <div class="quick-slots interactive">
-                    <div class="q-slot" onpointerdown="useItem('hp')">❤️<span class="q-count">50</span></div>
-                    <div class="q-slot" onpointerdown="useItem('mp')">💙<span class="q-count">30</span></div>
-                    <div class="q-slot" onpointerdown="useItem('scroll')">📜<span class="q-count">5</span></div>
-                    <div class="q-slot" onpointerdown="useItem('buff')">💪<span class="q-count">10</span></div>
-                </div>
-
-                <div class="skill-cluster interactive">
-                    <div class="action-btn spell-1" onpointerdown="useSkill(1)">⚡</div>
-                    <div class="action-btn spell-2" onpointerdown="useSkill(2)">🔥</div>
-                    <div class="action-btn spell-3" onpointerdown="useSkill(3)">🛡️</div>
-                    <div class="action-btn attack-main" onpointerdown="sendAction('attack')">⚔️</div>
+    <!-- ИГРОВОЙ ЭКРАН -->
+    <div id="game-screen">
+        <div id="3d-canvas-container"></div>
+        <div id="camera-zone"></div>
+        <div id="joystick-zone"></div>
+        
+        <div id="ui-layer">
+            <div class="player-hud interactive">
+                <div class="avatar-box"><img id="hud-avatar" src="https://via.placeholder.com/60" class="avatar-img"><div class="level-badge" id="level">1</div></div>
+                <div class="hud-info">
+                    <div class="hud-name"><span id="username">Герой</span><span id="class_type" class="hud-class">MAGE</span></div>
+                    <div class="bar-container"><div class="bar-fill hp-fill" id="hp-bar-width" style="width: 100%;"></div><div class="bar-text"><span id="hp">100</span> / <span id="max_hp">100</span></div></div>
+                    <div class="bar-container"><div class="bar-fill mp-fill" id="mp-bar-width" style="width: 100%;"></div><div class="bar-text"><span id="mp">50</span> / <span id="max_mp">50</span></div></div>
+                    <div class="hud-extra"><span class="hud-adena">💎 <span id="adena">0</span></span><span>EXP: <span id="exp">0</span></span></div>
                 </div>
             </div>
-        </div>
 
+            <div class="top-menu interactive">
+                <div class="menu-btn" onpointerdown="alert('Инвентарь')">🎒 Инвентарь</div>
+                <div class="menu-btn" onpointerdown="alert('Магазин')">⚖️ Магазин</div>
+            </div>
+
+            <div class="quick-slots interactive">
+                <div class="q-slot" onpointerdown="useItem('hp')">❤️<span class="q-count">50</span></div>
+                <div class="q-slot" onpointerdown="useItem('mp')">💙<span class="q-count">30</span></div>
+                <div class="q-slot" onpointerdown="useItem('scroll')">📜<span class="q-count">5</span></div>
+                <div class="q-slot" onpointerdown="useItem('buff')">💪<span class="q-count">10</span></div>
+            </div>
+
+            <div class="skill-cluster interactive">
+                <div class="action-btn spell-1" onpointerdown="useSkill(1)">⚡</div>
+                <div class="action-btn spell-2" onpointerdown="useSkill(2)">🔥</div>
+                <div class="action-btn spell-3" onpointerdown="useSkill(3)">🛡️</div>
+                <div class="action-btn attack-main" onpointerdown="sendAction('attack')">⚔️</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -153,6 +131,9 @@
 
         function enterGame() {
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+            try {
+                if (tg.requestFullscreen) tg.requestFullscreen();
+            } catch (e) {}
             document.getElementById('start-screen').style.display = 'none';
             syncWithServer();
         }
@@ -201,27 +182,39 @@
             manager.on('end', function () { moveVector.x = 0; moveVector.z = 0; });
 
             const cameraZone = document.getElementById('camera-zone');
-            let isDragging = false;
+            let activeTouchId = null;
             let previousTouch = { x: 0, y: 0 };
 
-            cameraZone.addEventListener('touchstart', (e) => {
-                isDragging = true;
-                previousTouch.x = e.touches[0].pageX;
-                previousTouch.y = e.touches[0].pageY;
-            });
+            cameraZone.addEventListener('touchstart', function(e) {
+                e.preventDefault(); 
+                if (activeTouchId !== null) return; 
+                const touch = e.changedTouches[0];
+                activeTouchId = touch.identifier;
+                previousTouch.x = touch.pageX;
+                previousTouch.y = touch.pageY;
+            }, {passive: false});
 
-            cameraZone.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                const currentX = e.touches[0].pageX;
-                const currentY = e.touches[0].pageY;
-                cameraAngleX -= (currentX - previousTouch.x) * 0.01;
-                cameraAngleY += (currentY - previousTouch.y) * 0.01;
-                cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
-                previousTouch.x = currentX;
-                previousTouch.y = currentY;
-            });
+            cameraZone.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (activeTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === activeTouchId) {
+                        cameraAngleX -= (touch.pageX - previousTouch.x) * 0.01;
+                        cameraAngleY += (touch.pageY - previousTouch.y) * 0.01;
+                        cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
+                        previousTouch.x = touch.pageX;
+                        previousTouch.y = touch.pageY;
+                        break;
+                    }
+                }
+            }, {passive: false});
 
-            window.addEventListener('touchend', () => { isDragging = false; });
+            cameraZone.addEventListener('touchend', function(e) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === activeTouchId) { activeTouchId = null; break; }
+                }
+            });
 
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
@@ -301,7 +294,7 @@
             let hpPercent = Math.max(0, Math.min(100, (u.hp / u.max_hp) * 100));
             let mpPercent = Math.max(0, Math.min(100, (u.mp / u.max_mp) * 100));
             document.getElementById('hp-bar-width').style.width = hpPercent + '%';
-            document.getElementById('mp-bar-width').style.width, document.getElementById('mp-bar-width').style.width = mpPercent + '%';
+            document.getElementById('mp-bar-width').style.width = mpPercent + '%';
 
             let avatarUrl = 'img/humanvoin.png'; 
             if (u.class_type === 'warrior') avatarUrl = 'img/humanvoin.png';
@@ -335,6 +328,8 @@
                 else { playerMesh.material.color.setHex(0xffffff); setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 300); }
             }
         }
+
+        syncWithServer();
     </script>
 </body>
 </html>
