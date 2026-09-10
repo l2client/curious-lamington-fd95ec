@@ -18,9 +18,8 @@ exports.handler = async (event) => {
 
         const headers = {
             'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'Authorization': `Bearer ` + supabaseKey,
+            'Content-Type': 'application/json'
         };
 
         // 1. Ищем игрока в базе
@@ -35,25 +34,32 @@ exports.handler = async (event) => {
         if (!user) {
             let insertRes = await fetch(`${supabaseUrl}/rest/v1/l2_users`, {
                 method: 'POST',
-                headers: headers,
+                headers: { ...headers, 'Prefer': 'return=representation' },
                 body: JSON.stringify({ telegram_id, username, level: 1, exp: 0, hp: 100, max_hp: 100, adena: 0 })
             });
             let inserted = await insertRes.json();
             user = inserted[0];
         }
 
-        // 3. Если пришла команда атаки
+        // 3. Если пришла команда атаки — обновляем и запрашиваем актуальные данные заново
         if (action === 'attack' && user) {
             const newExp = user.exp + 15;
             const newAdena = user.adena + 10;
 
-            let updateRes = await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}`, {
+            await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}`, {
                 method: 'PATCH',
                 headers: headers,
                 body: JSON.stringify({ exp: newExp, adena: newAdena })
             });
-            let updated = await updateRes.json();
-            user = updated[0] || user;
+
+            let freshRes = await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}&select=*`, {
+                method: 'GET',
+                headers: headers
+            });
+            let freshUsers = await freshRes.json();
+            if (freshUsers && freshUsers.length > 0) {
+                user = freshUsers[0];
+            }
         }
 
         return {
