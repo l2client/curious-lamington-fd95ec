@@ -12,10 +12,19 @@
         
         #creation-screen { display: none; padding: 10px; }
         .creation-title { font-size: 20px; color: #f1fa8c; margin-bottom: 15px; }
-        .class-grid { display: flex; flex-direction: column; gap: 10px; }
-        .class-card { background: #18181c; border: 1px solid #443c24; padding: 12px; border-radius: 8px; cursor: pointer; text-align: left; }
-        .class-card:hover { border-color: #d4af37; }
+        .class-grid { display: flex; flex-direction: column; gap: 15px; }
         
+        .class-card { background: linear-gradient(145deg, #18181c, #111115); border: 1px solid #443c24; border-radius: 10px; cursor: pointer; text-align: left; overflow: hidden; }
+        .class-card:hover { border-color: #d4af37; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(212,175,55,0.2); }
+        
+        /* Стили для картинок в меню создания */
+        .class-image { width: 100%; height: 140px; object-fit: contain; background-color: #000; border-bottom: 1px solid #443c24; padding: 5px 0; }
+        .class-info { padding: 10px 15px; }
+        .class-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; color: #ffb86c; }
+        .class-tag-phys { color: #50fa7b; font-size: 11px; background: rgba(80,250,123,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(80,250,123,0.3); }
+        .class-tag-mag { color: #8be9fd; font-size: 11px; background: rgba(139,233,253,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(139,233,253,0.3); }
+        .class-desc { font-size: 12px; color: #aaa; margin-top: 6px; }
+
         #game-screen { display: none; }
         
         #phaser-game-container {
@@ -30,22 +39,52 @@
         .btn { 
             background: linear-gradient(to bottom, #7a1c1c, #4d1010); 
             color: white; padding: 14px; border: 1px solid #d4af37; width: 100%; 
-            font-size: 17px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            font-size: 17px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;
         }
         .btn:active { background: #942424; transform: scale(0.98); }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Lineage II: Phaser</h2>
+        <h2 style="margin-bottom: 15px;">Lineage II: Visual</h2>
 
+        <!-- Экран выбора классов (теперь с вашими картинками) -->
         <div id="creation-screen">
             <div class="creation-title">Выбор Пути Героя</div>
             <div class="class-grid">
-                <div class="class-card" onclick="createCharacter('warrior')">⚔️ Воин (Gladiator)</div>
-                <div class="class-card" onclick="createCharacter('archer')">🏹 Стрелок (Hawkeye)</div>
-                <div class="class-card" onclick="createCharacter('mage')">🔮 Маг (Spellsinger)</div>
-                <div class="class-card" onclick="createCharacter('overlord')">📜 Оверлорд (Overlord)</div>
+                
+                <div class="class-card" onclick="createCharacter('warrior')">
+                    <img src="img/humanvoin.png" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>⚔️ Воин</span><span class="class-tag-phys">Физ. ДД</span></div>
+                        <div class="class-desc">Тяжелая броня и огромный урон.</div>
+                    </div>
+                </div>
+                
+                <div class="class-card" onclick="createCharacter('archer')">
+                    <img src="img/elfluk.png" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>🏹 Стрелок</span><span class="class-tag-phys">Физ. ДД</span></div>
+                        <div class="class-desc">Молниеносные атаки из лука.</div>
+                    </div>
+                </div>
+
+                <div class="class-card" onclick="createCharacter('mage')">
+                    <img src="img/humanmaq.png" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>🔮 Маг</span><span class="class-tag-mag">Маг. ДД</span></div>
+                        <div class="class-desc">Сокрушительная магия стихий.</div>
+                    </div>
+                </div>
+
+                <div class="class-card" onclick="createCharacter('overlord')">
+                    <img src="img/qaraelftx.png" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>📜 Оверлорд</span><span class="class-tag-mag">Саппорт</span></div>
+                        <div class="class-desc">Темные искусства и проклятия.</div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -72,67 +111,83 @@
             constructor() { super({ key: 'BattleScene' }); }
 
             preload() {
-                // Загружаем ВАШИ картинки из папки img
-                // Используем load.image для статичных картинок (не спрайт-листов)
+                // Загружаем фон (если его нет в папке img, будет черный цвет)
                 this.load.image('bg', 'img/bg-arena.jpg'); 
-                this.load.image('player_sprite', 'img/voin.png'); 
-                this.load.image('monster_sprite', 'img/gremlin.png'); 
+                
+                // ЗАГРУЖАЕМ ВСЕ ВАШИ КАРТИНКИ
+                this.load.image('warrior', 'img/humanvoin.png'); 
+                this.load.image('archer', 'img/elfluk.png'); 
+                this.load.image('mage', 'img/humanmaq.png'); 
+                this.load.image('overlord', 'img/qaraelftx.png'); 
+                this.load.image('gremlin', 'img/gremlin.png'); 
             }
 
             create() {
                 gameScene = this;
                 
-                // Ставим цвет неба на случай, если фон bg-arena.jpg не загрузится
-                this.cameras.main.setBackgroundColor('#2a2a35');
+                this.cameras.main.setBackgroundColor('#1a1a24');
 
-                // Пытаемся добавить фон (если он есть)
+                // Пытаемся добавить фон
                 try {
                     let bg = this.add.image(200, 110, 'bg');
-                    bg.setScale(1.5);
-                } catch (e) { console.log("Фон не найден, используем цвет"); }
+                    bg.setDisplaySize(400, 220); 
+                } catch(e) {}
 
-                // Создаем игрока (слева)
-                this.player = this.add.image(80, 140, 'player_sprite');
-                this.player.setScale(0.8); // Подгоните размер (0.5 - половина, 1 - оригинал, 2 - в два раза больше)
-                
-                // Создаем монстра (справа)
-                this.monster = this.add.image(320, 140, 'monster_sprite');
-                this.monster.setScale(0.8); 
-                this.monster.flipX = true; // Разворачиваем монстра к игроку
+                // Создаем игрока (по умолчанию ставим воина, но он сразу поменяется сервером)
+                this.player = this.add.image(90, 200, 'warrior');
+                this.player.setOrigin(0.5, 1); // Ногами на пол
+                this.fitToHeight(this.player, 120); 
 
-                // ПРОГРАММНАЯ АНИМАЦИЯ (Дыхание)
-                // Заставляем картинки плавно сжиматься по вертикали
+                // Создаем монстра (Гремлин)
+                this.monster = this.add.image(310, 200, 'gremlin');
+                this.monster.setOrigin(0.5, 1);
+                this.monster.flipX = true; // Лицом к игроку
+                this.fitToHeight(this.monster, 110);
+
+                // Анимация дыхания
                 this.tweens.add({
                     targets: [this.player, this.monster],
-                    scaleY: 0.75, // Слегка сплющиваем
-                    duration: 1200,
-                    yoyo: true, // И обратно
-                    repeat: -1, // Бесконечно
+                    scaleY: { value: '-=0.03' }, 
+                    scaleX: { value: '+=0.01' },
+                    duration: 1500,
+                    yoyo: true,
+                    repeat: -1,
                     ease: 'Sine.easeInOut'
                 });
             }
 
-            // Анимация удара
+            // ДИНАМИЧЕСКОЕ ИЗМЕНЕНИЕ КЛАССА
+            setPlayerClass(classType) {
+                if (this.textures.exists(classType)) {
+                    this.player.setTexture(classType);
+                    this.fitToHeight(this.player, 120); // Заново подгоняем размер под новую картинку
+                }
+            }
+
+            fitToHeight(sprite, targetHeight) {
+                if (sprite.height > 0) {
+                    let ratio = targetHeight / sprite.height;
+                    sprite.setScale(ratio);
+                }
+            }
+
             playAttackAnimation() {
-                // Прыжок к монстру и обратно
                 this.tweens.add({
                     targets: this.player,
-                    x: 150, // Прыгаем вперед
-                    y: 130, // Слегка вверх
-                    duration: 150,
+                    x: 140, // Рывок
+                    duration: 100,
                     yoyo: true,
                     ease: 'Power2',
                     onComplete: () => {
-                        this.showDamageText(this.monster.x, this.monster.y - 50, "-15");
+                        this.showDamage(this.monster.x, this.monster.y - this.monster.displayHeight + 20, "-15");
                         
-                        // Эффект получения урона для монстра (краснеет и трясется)
-                        this.monster.setTint(0xff0000); // Красим в красный
-                        setTimeout(() => this.monster.clearTint(), 200); // Возвращаем цвет
+                        this.monster.setTint(0xff0000);
+                        setTimeout(() => this.monster.clearTint(), 150);
                         
                         this.tweens.add({
                             targets: this.monster,
-                            x: this.monster.x + 10,
-                            duration: 50,
+                            x: { from: 310, to: 318 }, // Отброс
+                            duration: 40,
                             yoyo: true,
                             repeat: 2
                         });
@@ -140,14 +195,17 @@
                 });
             }
 
-            // Текст урона
-            showDamageText(x, y, text) {
-                let dmgText = this.add.text(x, y, text, { font: 'bold 22px Arial', fill: '#ff5555', stroke: '#000000', strokeThickness: 4 });
+            showDamage(x, y, text) {
+                let dmgText = this.add.text(x, y, text, { font: 'bold 24px Arial', fill: '#ff4444', stroke: '#000000', strokeThickness: 5 });
+                dmgText.setOrigin(0.5, 0.5);
+                
                 this.tweens.add({
                     targets: dmgText,
-                    y: y - 50,
-                    alpha: 0,
-                    duration: 800,
+                    y: y - 60,
+                    scale: { from: 0.5, to: 1.2 },
+                    alpha: { from: 1, to: 0 },
+                    duration: 700,
+                    ease: 'Cubic.easeOut',
                     onComplete: () => { dmgText.destroy(); }
                 });
             }
@@ -220,6 +278,11 @@
                 statsHTML += `<p>🌀 Cast. Speed: <b>${u.m_cast_speed}</b> | 🎯 Crit: <b>${u.crit}%</b></p>`;
             }
             document.getElementById('stats-container').innerHTML = statsHTML;
+
+            // ГЛАВНАЯ МАГИЯ: Заставляем движок переключить картинку на арене!
+            if (gameScene) {
+                gameScene.setPlayerClass(u.class_type);
+            }
         }
 
         function sendAction(actionType) {
