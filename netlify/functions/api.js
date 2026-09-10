@@ -23,7 +23,6 @@ exports.handler = async (event) => {
             'Content-Type': 'application/json'
         };
 
-        // 1. Поиск игрока
         let response = await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}&select=*`, {
             method: 'GET',
             headers: headers
@@ -31,7 +30,7 @@ exports.handler = async (event) => {
         let users = await response.json();
         let user = users && users.length > 0 ? users[0] : null;
 
-        // Если персонажа нет или запрошено создание
+        // Создание персонажа или принудительный выбор класса
         if (!user || action === 'create') {
             if (action === 'create' || !user) {
                 let stats = getStatsForClass(class_type);
@@ -45,7 +44,6 @@ exports.handler = async (event) => {
                     ...stats
                 };
 
-                // Если персонаж уже был, удаляем старого перед созданием нового
                 if (user) {
                     await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}`, {
                         method: 'DELETE',
@@ -69,7 +67,6 @@ exports.handler = async (event) => {
             }
         }
 
-        // Если игрок зашел первый раз и в базе нет записи
         if (!user) {
             return {
                 statusCode: 200,
@@ -78,7 +75,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // 2. Логика PvE атаки
+        // Логика PvE атаки
         if (action === 'attack') {
             let gainedExp = 30;
             let gainedAdena = 15;
@@ -142,14 +139,14 @@ exports.handler = async (event) => {
 
 function getStatsForClass(type) {
     switch (type) {
-        case 'mage': // Чистый маг (только магия)
-            return { hp: 80, max_hp: 80, mp: 150, max_mp: 150, p_atk: 0, p_def: 12, m_atk: 30, m_def: 25, atk_speed: 350, crit: 3 };
-        case 'shaman': // Шаман (магический саппорт/бойец)
-            return { hp: 100, max_hp: 100, mp: 120, max_mp: 120, p_atk: 0, p_def: 18, m_atk: 22, m_def: 22, atk_speed: 300, crit: 4 };
-        case 'archer': // Стрелок (физ. дальний бой, высокий крит)
-            return { hp: 90, max_hp: 90, mp: 60, max_mp: 60, p_atk: 25, p_def: 16, m_atk: 0, m_def: 15, atk_speed: 400, crit: 10 };
+        case 'mage':
+            return { hp: 80, max_hp: 80, mp: 150, max_mp: 150, p_atk: 0, p_def: 12, m_atk: 30, m_def: 25, p_atk_speed: 300, m_cast_speed: 400, crit: 3 };
+        case 'overlord':
+            return { hp: 110, max_hp: 110, mp: 130, max_mp: 130, p_atk: 0, p_def: 20, m_atk: 25, m_def: 22, p_atk_speed: 300, m_cast_speed: 350, crit: 4 };
+        case 'archer':
+            return { hp: 90, max_hp: 90, mp: 60, max_mp: 60, p_atk: 25, p_def: 16, m_atk: 0, m_def: 15, p_atk_speed: 400, m_cast_speed: 300, crit: 10 };
         case 'warrior':
-        default: // Воин (физ. ближний бой, высокая броня)
-            return { hp: 130, max_hp: 130, mp: 50, max_mp: 50, p_atk: 20, p_def: 25, m_atk: 0, m_def: 15, atk_speed: 300, crit: 5 };
+        default:
+            return { hp: 130, max_hp: 130, mp: 50, max_mp: 50, p_atk: 20, p_def: 25, m_atk: 0, m_def: 15, p_atk_speed: 300, m_cast_speed: 300, crit: 5 };
     }
 }
