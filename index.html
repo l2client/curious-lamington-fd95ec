@@ -3,36 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L2 Telegram Game</title>
+    <title>L2 Telegram MMORPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background-color: #1a1a1a; color: #d4af37; font-family: sans-serif; text-align: center; padding-top: 20px; }
-        .stats { background: #2a2a2a; padding: 15px; margin: 10px auto; width: 80%; border-radius: 8px; border: 1px solid #444; }
-        .btn { background: #5c1818; color: white; padding: 15px; border: 1px solid #d4af37; width: 85%; margin-top: 20px; font-size: 18px; border-radius: 5px; cursor: pointer; }
+        body { background-color: #121212; color: #d4af37; font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .stats-box { background: #1e1e1e; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; text-align: left; font-size: 14px; }
+        .stats-box p { margin: 6px 0; }
+        .btn { background: #5c1818; color: white; padding: 12px; border: 1px solid #d4af37; width: 100%; margin-top: 10px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn:active { background: #7c2222; }
+        .highlight { color: #50fa7b; }
     </style>
 </head>
 <body>
-    <h1>Убить Гремлина</h1>
-    
-    <div class="stats">
-        <p>Игрок: <span id="username">Загрузка...</span></p>
-        <p>Уровень: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
-        <p>Адена: <span id="adena">0</span></p>
-        <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span></p>
-    </div>
+    <div class="container">
+        <h2>Lineage II: Telegram Edition</h2>
+        
+        <div class="stats-box">
+            <p>Игрок: <span id="username" class="highlight">Загрузка...</span></p>
+            <p>Уровень: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
+            <p>Адена: <span id="adena" style="color: #f1fa8c;">0</span></p>
+            <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span> | MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
+        </div>
 
-    <button class="btn" onclick="sendAction('attack')">Атаковать моба</button>
+        <div class="stats-box">
+            <p>⚔️ P. Atk: <span id="p_atk">15</span> | 🛡️ P. Def: <span id="p_def">20</span></p>
+            <p>🔮 M. Atk: <span id="m_atk">10</span> | 🛡️ M. Def: <span id="m_def">18</span></p>
+            <p>⚡ Atk. Spd: <span id="p_atk_speed">300</span> | 🌀 Cast. Spd: <span id="m_cast_speed">330</span></p>
+            <p>🎯 Crit. Rate: <span id="crit">4</span>%</p>
+        </div>
+
+        <button class="btn" onclick="sendAction('attack')">Атаковать моба</button>
+    </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
         let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
-        let telegramId = user ? user.id : 123456789;
+        let telegramId = user ? user.id.toString() : "123456789";
         let firstName = user ? (user.first_name || "Герой") : "Тестовый Герой";
 
-        // Запрос идет на ваш собственный эндпоинт Netlify
         const API_URL = '/.netlify/functions/api';
 
         function syncWithServer(action = '') {
@@ -47,27 +58,39 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
+                if (data.success && data.user) {
                     updateUI(data.user);
                 }
             })
-            .catch(err => console.error('Ошибка:', err));
+            .catch(err => console.error('Ошибка соединения:', err));
         }
 
-        function updateUI(userData) {
-            document.getElementById('username').innerText = userData.username;
-            document.getElementById('level').innerText = userData.level;
-            document.getElementById('exp').innerText = userData.exp;
-            document.getElementById('adena').innerText = userData.adena;
-            document.getElementById('hp').innerText = userData.hp;
-            document.getElementById('max_hp').innerText = userData.max_hp;
+        function updateUI(u) {
+            document.getElementById('username').innerText = u.username;
+            document.getElementById('level').innerText = u.level;
+            document.getElementById('exp').innerText = u.exp;
+            document.getElementById('adena').innerText = u.adena;
+            document.getElementById('hp').innerText = u.hp;
+            document.getElementById('max_hp').innerText = u.max_hp;
+            document.getElementById('mp').innerText = u.mp;
+            document.getElementById('max_mp').innerText = u.max_mp;
+            document.getElementById('p_atk').innerText = u.p_atk;
+            document.getElementById('p_def').innerText = u.p_def;
+            document.getElementById('m_atk').innerText = u.m_atk;
+            document.getElementById('m_def').innerText = u.m_def;
+            document.getElementById('p_atk_speed').innerText = u.p_atk_speed;
+            document.getElementById('m_cast_speed').innerText = u.m_cast_speed;
+            document.getElementById('crit').innerText = u.crit;
         }
 
         function sendAction(actionType) {
             syncWithServer(actionType);
-            tg.HapticFeedback.impactOccurred('medium');
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
         }
 
+        // Первичная загрузка стат при открытии
         syncWithServer();
     </script>
 </body>
