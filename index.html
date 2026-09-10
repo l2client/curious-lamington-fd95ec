@@ -13,27 +13,62 @@
         .btn { background: #5c1818; color: white; padding: 12px; border: 1px solid #d4af37; width: 100%; margin-top: 10px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn:active { background: #7c2222; }
         .highlight { color: #50fa7b; }
+        
+        /* Стили экрана создания персонажа */
+        #creation-screen { display: none; margin-top: 20px; }
+        .class-card { background: #1a1a1a; border: 1px solid #d4af37; padding: 10px; margin: 10px 0; border-radius: 6px; cursor: pointer; text-align: left; }
+        .class-card:hover { background: #2a2a2a; }
+        .class-title { font-weight: bold; color: #ffb86c; font-size: 16px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Lineage II: Telegram Edition</h2>
-        
-        <div class="stats-box">
-            <p>Игрок: <span id="username" class="highlight">Загрузка...</span></p>
-            <p>Уровень: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
-            <p>Адена: <span id="adena" style="color: #f1fa8c;">0</span></p>
-            <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span> | MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
+
+        <!-- Экран создания персонажа -->
+        <div id="creation-screen">
+            <h3>Создание персонажа</h3>
+            <p>Выберите ваш класс:</p>
+            
+            <div class="class-card" onclick="createCharacter('warrior')">
+                <div class="class-title">⚔️ Воин (Gladiator)</div>
+                <p style="font-size: 12px; color: #aaa;">Высокий запас здоровья и хорошая защита в ближнем бою.</p>
+            </div>
+            
+            <div class="class-card" onclick="createCharacter('mage')">
+                <div class="class-title">🔮 Маг (Spellsinger)</div>
+                <p style="font-size: 12px; color: #aaa;">Огромный магический урон и запас маны, слабая броня.</p>
+            </div>
+
+            <div class="class-card" onclick="createCharacter('archer')">
+                <div class="class-title">🏹 Лучник (Hawkeye)</div>
+                <p style="font-size: 12px; color: #aaa;">Сбалансированный урон на расстоянии и высокая скорость атаки.</p>
+            </div>
+
+            <div class="class-card" onclick="createCharacter('assassin')">
+                <div class="class-title">🗡️ Даггерщик (Treasure Hunter)</div>
+                <p style="font-size: 12px; color: #aaa;">Максимальный шанс критического удара и молниеносная скорость.</p>
+            </div>
         </div>
 
-        <div class="stats-box">
-            <p>⚔️ P. Atk: <span id="p_atk">15</span> | 🛡️ P. Def: <span id="p_def">20</span></p>
-            <p>🔮 M. Atk: <span id="m_atk">10</span> | 🛡️ M. Def: <span id="m_def">18</span></p>
-            <p>⚡ Atk. Spd: <span id="p_atk_speed">300</span> | 🌀 Cast. Spd: <span id="m_cast_speed">330</span></p>
-            <p>🎯 Crit. Rate: <span id="crit">4</span>%</p>
-        </div>
+        <!-- Основной игровой экран -->
+        <div id="game-screen" style="display: none;">
+            <div class="stats-box">
+                <p>Игрок: <span id="username" class="highlight"></span> [<span id="class_type" style="color: #8be9fd;"></span>]</p>
+                <p>Уровень: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
+                <p>Адена: <span id="adena" style="color: #f1fa8c;">0</span></p>
+                <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span> | MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
+            </div>
 
-        <button class="btn" onclick="sendAction('attack')">Атаковать моба</button>
+            <div class="stats-box">
+                <p>⚔️ P. Atk: <span id="p_atk">15</span> | 🛡️ P. Def: <span id="p_def">20</span></p>
+                <p>🔮 M. Atk: <span id="m_atk">10</span> | 🛡️ M. Def: <span id="m_def">18</span></p>
+                <p>⚡ Atk. Spd: <span id="p_atk_speed">300</span> | 🌀 Cast. Spd: <span id="m_cast_speed">330</span></p>
+                <p>🎯 Crit. Rate: <span id="crit">4</span>%</p>
+            </div>
+
+            <button class="btn" onclick="sendAction('attack')">Атаковать моба</button>
+        </div>
     </div>
 
     <script>
@@ -46,27 +81,43 @@
 
         const API_URL = '/.netlify/functions/api';
 
-        function syncWithServer(action = '') {
+        function syncWithServer(action = '', classType = '') {
             fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     telegram_id: telegramId,
                     username: firstName,
-                    action: action
+                    action: action,
+                    class_type: classType
                 })
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.user) {
-                    updateUI(data.user);
+                if (data.success) {
+                    if (data.needs_creation) {
+                        document.getElementById('creation-screen').style.display = 'block';
+                        document.getElementById('game-screen').style.display = 'none';
+                    } else if (data.user) {
+                        document.getElementById('creation-screen').style.display = 'none';
+                        document.getElementById('game-screen').style.display = 'block';
+                        updateUI(data.user);
+                    }
                 }
             })
             .catch(err => console.error('Ошибка соединения:', err));
         }
 
+        function createCharacter(classType) {
+            syncWithServer('create', classType);
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
         function updateUI(u) {
             document.getElementById('username').innerText = u.username;
+            document.getElementById('class_type').innerText = u.class_type.toUpperCase();
             document.getElementById('level').innerText = u.level;
             document.getElementById('exp').innerText = u.exp;
             document.getElementById('adena').innerText = u.adena;
@@ -90,7 +141,7 @@
             }
         }
 
-        // Первичная загрузка стат при открытии
+        // Проверка при открытии
         syncWithServer();
     </script>
 </body>
