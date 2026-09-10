@@ -23,7 +23,7 @@ exports.handler = async (event) => {
             'Content-Type': 'application/json'
         };
 
-        // 1. Поиск игрока в базе
+        // 1. Поиск игрока
         let response = await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}&select=*`, {
             method: 'GET',
             headers: headers
@@ -31,11 +31,10 @@ exports.handler = async (event) => {
         let users = await response.json();
         let user = users && users.length > 0 ? users[0] : null;
 
-        // Если игрока нет — сигнализируем клиенту, что нужно открыть экран создания персонажа
-        if (!user) {
-            if (action === 'create') {
-                // Создаем персонажа по выбранному классу
-                let stats = getBaseStatsForClass(class_type);
+        // Если персонажа нет или запрошено создание
+        if (!user || action === 'create') {
+            if (action === 'create' || !user) {
+                let stats = getStatsForClass(class_type);
                 const newUser = {
                     telegram_id,
                     username,
@@ -45,6 +44,14 @@ exports.handler = async (event) => {
                     adena: 0,
                     ...stats
                 };
+
+                // Если персонаж уже был, удаляем старого перед созданием нового
+                if (user) {
+                    await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}`, {
+                        method: 'DELETE',
+                        headers: headers
+                    });
+                }
 
                 let insertRes = await fetch(`${supabaseUrl}/rest/v1/l2_users`, {
                     method: 'POST',
@@ -62,10 +69,19 @@ exports.handler = async (event) => {
             }
         }
 
-        // 2. Логика PvE атаки моба
-        if (action === 'attack' && user) {
-            let gainedExp = 25;
-            let gainedAdena = 12;
+        // Если игрок зашел первый раз и в базе нет записи
+        if (!user) {
+            return {
+                statusCode: 200,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ success: true, needs_creation: true })
+            };
+        }
+
+        // 2. Логика PvE атаки
+        if (action === 'attack') {
+            let gainedExp = 30;
+            let gainedAdena = 15;
             let newExp = user.exp + gainedExp;
             let newAdena = user.adena + gainedAdena;
             let newLevel = user.level;
@@ -73,6 +89,8 @@ exports.handler = async (event) => {
             let newMaxMp = user.max_mp;
             let newPAtk = user.p_atk;
             let newPDef = user.p_def;
+            let newMAtk = user.m_atk;
+            let newMDef = user.m_def;
 
             const expNeeded = user.level * 100;
             if (newExp >= expNeeded) {
@@ -80,8 +98,8 @@ exports.handler = async (event) => {
                 newExp -= expNeeded;
                 newMaxHp += 25;
                 newMaxMp += 15;
-                newPAtk += 6;
-                newPDef += 5;
+                if (newPAtk > 0) { newPAtk += 6; newPDef += 5; }
+                if (newMAtk > 0) { newMAtk += 8; newMDef += 6; }
             }
 
             await fetch(`${supabaseUrl}/rest/v1/l2_users?telegram_id=eq.${telegram_id}`, {
@@ -95,7 +113,9 @@ exports.handler = async (event) => {
                     max_hp: newMaxHp,
                     max_mp: newMaxMp,
                     p_atk: newPAtk,
-                    p_def: newPDef
+                    p_def: newPDef,
+                    m_atk: newMAtk,
+                    m_def: newMDef
                 })
             });
 
@@ -120,16 +140,16 @@ exports.handler = async (event) => {
     }
 };
 
-function getBaseStatsForClass(type) {
+function getStatsForClass(type) {
     switch (type) {
-        case 'mage':
-            return { hp: 80, max_hp: 80, mp: 120, max_mp: 120, p_atk: 10, m_atk: 25, p_def: 15, m_def: 25, p_atk_speed: 250, m_cast_speed: 400, crit: 3 };
-        case 'archer':
-            return { hp: 90, max_hp: 90, mp: 60, max_mp: 60, p_atk: 22, m_atk: 8, p_def: 16, m_def: 16, p_atk_speed: 350, m_cast_speed: 300, crit: 8 };
-        case 'assassin':
-            return { hp: 95, max_hp: 95, mp: 50, max_mp: 50, p_atk: 20, m_atk: 8, p_def: 18, m_def: 15, p_atk_speed: 380, m_cast_speed: 300, crit: 12 };
+        case 'mage': // Чистый маг (только магия)
+            return { hp: 80, max_hp: 80, mp: 150, max_mp: 150, p_atk: 0, p_def: 12, m_atk: 30, m_def: 25, atk_speed: 350, crit: 3 };
+        case 'shaman': // Шаман (магический саппорт/бойец)
+            return { hp: 100, max_hp: 100, mp: 120, max_mp: 120, p_atk: 0, p_def: 18, m_atk: 22, m_def: 22, atk_speed: 300, crit: 4 };
+        case 'archer': // Стрелок (физ. дальний бой, высокий крит)
+            return { hp: 90, max_hp: 90, mp: 60, max_mp: 60, p_atk: 25, p_def: 16, m_atk: 0, m_def: 15, atk_speed: 400, crit: 10 };
         case 'warrior':
-        default:
-            return { hp: 120, max_hp: 120, mp: 50, max_mp: 50, p_atk: 18, m_atk: 8, p_def: 24, m_def: 18, p_atk_speed: 300, m_cast_speed: 300, crit: 4 };
+        default: // Воин (физ. ближний бой, высокая броня)
+            return { hp: 130, max_hp: 130, mp: 50, max_mp: 50, p_atk: 20, p_def: 25, m_atk: 0, m_def: 15, atk_speed: 300, crit: 5 };
     }
 }

@@ -6,48 +6,52 @@
     <title>L2 Telegram MMORPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background-color: #121212; color: #d4af37; font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
+        body { background-color: #0f0f0f; color: #d4af37; font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
         .container { max-width: 400px; margin: 0 auto; }
-        .stats-box { background: #1e1e1e; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; text-align: left; font-size: 14px; }
+        .stats-box { background: #1a1a1a; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; text-align: left; font-size: 14px; }
         .stats-box p { margin: 6px 0; }
         .btn { background: #5c1818; color: white; padding: 12px; border: 1px solid #d4af37; width: 100%; margin-top: 10px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn:active { background: #7c2222; }
         .highlight { color: #50fa7b; }
-        
-        /* Стили экрана создания персонажа */
-        #creation-screen { display: none; margin-top: 20px; }
-        .class-card { background: #1a1a1a; border: 1px solid #d4af37; padding: 10px; margin: 10px 0; border-radius: 6px; cursor: pointer; text-align: left; }
-        .class-card:hover { background: #2a2a2a; }
-        .class-title { font-weight: bold; color: #ffb86c; font-size: 16px; }
+
+        /* Окно выбора классов */
+        #creation-screen { display: none; padding: 5px; }
+        .class-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .class-card { background: #181818; border: 1px solid #444; padding: 10px; border-radius: 8px; cursor: pointer; text-align: left; transition: 0.2s; }
+        .class-card:hover { border-color: #d4af37; background: #222; }
+        .class-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; color: #ffb86c; }
+        .class-desc { font-size: 11px; color: #999; margin-top: 4px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Lineage II: Telegram Edition</h2>
+        <h2>Lineage II: Classic</h2>
 
-        <!-- Экран создания персонажа -->
+        <!-- Экран создания персонажа у NPC -->
         <div id="creation-screen">
-            <h3>Создание персонажа</h3>
-            <p>Выберите ваш класс:</p>
+            <h3 style="color: #f1fa8c; margin-bottom: 5px;">Выбор Пути Героя</h3>
+            <p style="font-size: 12px; color: #bbb;">Выберите класс у Великого Мастера:</p>
             
-            <div class="class-card" onclick="createCharacter('warrior')">
-                <div class="class-title">⚔️ Воин (Gladiator)</div>
-                <p style="font-size: 12px; color: #aaa;">Высокий запас здоровья и хорошая защита в ближнем бою.</p>
-            </div>
-            
-            <div class="class-card" onclick="createCharacter('mage')">
-                <div class="class-title">🔮 Маг (Spellsinger)</div>
-                <p style="font-size: 12px; color: #aaa;">Огромный магический урон и запас маны, слабая броня.</p>
-            </div>
+            <div class="class-grid">
+                <div class="class-card" onclick="createCharacter('warrior')">
+                    <div class="class-header"><span>⚔️ Воин (Gladiator)</span><span style="color: #50fa7b; font-size:11px;">Физ. ДД</span></div>
+                    <div class="class-desc">Высокий запас HP, мощный ближний бой и тяжелая броня.</div>
+                </div>
+                
+                <div class="class-card" onclick="createCharacter('archer')">
+                    <div class="class-header"><span>🏹 Стрелок (Hawkeye)</span><span style="color: #50fa7b; font-size:11px;">Физ. ДД</span></div>
+                    <div class="class-desc">Смертоносные атаки на расстоянии и повышенный шанс критического удара.</div>
+                </div>
 
-            <div class="class-card" onclick="createCharacter('archer')">
-                <div class="class-title">🏹 Лучник (Hawkeye)</div>
-                <p style="font-size: 12px; color: #aaa;">Сбалансированный урон на расстоянии и высокая скорость атаки.</p>
-            </div>
+                <div class="class-card" onclick="createCharacter('mage')">
+                    <div class="class-header"><span>🔮 Маг (Spellsinger)</span><span style="color: #8be9fd; font-size:11px;">Маг. ДД</span></div>
+                    <div class="class-desc">Разрушительные заклинания стихий и огромный запас маны (MP).</div>
+                </div>
 
-            <div class="class-card" onclick="createCharacter('assassin')">
-                <div class="class-title">🗡️ Даггерщик (Treasure Hunter)</div>
-                <p style="font-size: 12px; color: #aaa;">Максимальный шанс критического удара и молниеносная скорость.</p>
+                <div class="class-card" onclick="createCharacter('shaman')">
+                    <div class="class-header"><span>📜 Шаман (Overlord)</span><span style="color: #8be9fd; font-size:11px;">Маг / Саппорт</span></div>
+                    <div class="class-desc">Баланс магии, усиленной защиты и контроля поля боя.</div>
+                </div>
             </div>
         </div>
 
@@ -60,11 +64,8 @@
                 <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span> | MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
             </div>
 
-            <div class="stats-box">
-                <p>⚔️ P. Atk: <span id="p_atk">15</span> | 🛡️ P. Def: <span id="p_def">20</span></p>
-                <p>🔮 M. Atk: <span id="m_atk">10</span> | 🛡️ M. Def: <span id="m_def">18</span></p>
-                <p>⚡ Atk. Spd: <span id="p_atk_speed">300</span> | 🌀 Cast. Spd: <span id="m_cast_speed">330</span></p>
-                <p>🎯 Crit. Rate: <span id="crit">4</span>%</p>
+            <div class="stats-box" id="stats-container">
+                <!-- Динамически показываем только нужные статы -->
             </div>
 
             <button class="btn" onclick="sendAction('attack')">Атаковать моба</button>
@@ -125,13 +126,18 @@
             document.getElementById('max_hp').innerText = u.max_hp;
             document.getElementById('mp').innerText = u.mp;
             document.getElementById('max_mp').innerText = u.max_mp;
-            document.getElementById('p_atk').innerText = u.p_atk;
-            document.getElementById('p_def').innerText = u.p_def;
-            document.getElementById('m_atk').innerText = u.m_atk;
-            document.getElementById('m_def').innerText = u.m_def;
-            document.getElementById('p_atk_speed').innerText = u.p_atk_speed;
-            document.getElementById('m_cast_speed').innerText = u.m_cast_speed;
-            document.getElementById('crit').innerText = u.crit;
+
+            // Рендерим статы в зависимости от класса (убираем лишние физ/маг статы)
+            let statsHTML = '';
+            if (u.p_atk > 0) {
+                statsHTML += `<p>⚔️ P. Atk: <b>${u.p_atk}</b> | 🛡️ P. Def: <b>${u.p_def}</b></p>`;
+            }
+            if (u.m_atk > 0) {
+                statsHTML += `<p>🔮 M. Atk: <b>${u.m_atk}</b> | 🛡️ M. Def: <b>${u.m_def}</b></p>`;
+            }
+            statsHTML += `<p>⚡ Atk. Speed: <b>${u.atk_speed}</b> | 🎯 Crit: <b>${u.crit}%</b></p>`;
+            
+            document.getElementById('stats-container').innerHTML = statsHTML;
         }
 
         function sendAction(actionType) {
@@ -141,7 +147,6 @@
             }
         }
 
-        // Проверка при открытии
         syncWithServer();
     </script>
 </body>
