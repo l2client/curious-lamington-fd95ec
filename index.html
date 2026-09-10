@@ -17,42 +17,84 @@
         .class-grid { display: flex; flex-direction: column; gap: 12px; }
         .class-card { background: #18181c; border: 1px solid #d4af37; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        /* Игровой экран */
         #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
-        
-        /* 1. ФОНОВЫЙ 3D-МИР */
         #3d-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
-        
-        /* 2. ЗОНА ВРАЩЕНИЯ КАМЕРЫ (Весь экран под UI) */
         #camera-zone { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 4; }
-
-        /* 3. ЗОНА ДЖОЙСТИКА (Только левая половина) */
         #joystick-zone { position: absolute; bottom: 0; left: 0; width: 50vw; height: 50vh; z-index: 5; }
 
-        /* 4. ИНТЕРФЕЙС ПОВЕРХ ВСЕГО */
+        /* ИНТЕРФЕЙС ПОВЕРХ ВСЕГО */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
         .interactive { pointer-events: auto; } 
 
-        /* Статы */
-        .stats-panel { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.6); padding: 8px 12px; border-radius: 8px; border: 1px solid #443c24; font-size: 12px; }
-        .stats-panel p { margin: 4px 0; }
-        .highlight { color: #50fa7b; font-weight: bold; }
-
-        /* Главное меню */
-        .top-menu { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
-        .menu-btn { background: rgba(20, 20, 20, 0.8); color: #d4af37; border: 1px solid #d4af37; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .menu-btn:active { background: #d4af37; color: #000; }
-
-        /* Боевые кнопки */
-        .action-panel { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
-        .attack-btn { 
-            background: radial-gradient(circle, #7a1c1c, #4d1010); 
-            color: white; border: 2px solid #d4af37; width: 75px; height: 75px; 
-            border-radius: 50%; font-size: 14px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-            display: flex; justify-content: center; align-items: center; text-align: center;
+        /* =========================================
+           НОВЫЙ HUD ИГРОКА (Левый верхний угол)
+           ========================================= */
+        .player-hud {
+            position: absolute; top: 15px; left: 15px;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(15, 15, 20, 0.85); padding: 5px 15px 5px 5px;
+            border-radius: 50px; border: 1px solid #443c24;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .attack-btn:active { transform: scale(0.9); box-shadow: 0 0 25px rgba(212, 175, 55, 0.6); }
+
+        /* Аватарка и уровень */
+        .avatar-box { position: relative; width: 55px; height: 55px; }
+        .avatar-img { 
+            width: 100%; height: 100%; border-radius: 50%; 
+            border: 2px solid #d4af37; object-fit: cover; background: #222;
+        }
+        .level-badge {
+            position: absolute; bottom: -5px; right: -5px;
+            background: #d4af37; color: #000; font-size: 11px; font-weight: bold;
+            width: 20px; height: 20px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            border: 2px solid #111;
+        }
+
+        /* Информация и Полоски */
+        .hud-info { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
+        .hud-name { font-size: 13px; font-weight: bold; color: #fff; margin-bottom: 2px; text-shadow: 1px 1px 2px #000; }
+        .hud-class { color: #8be9fd; font-size: 10px; text-transform: uppercase; margin-left: 5px;}
+        
+        .bar-container { position: relative; width: 100%; height: 12px; background: #222; border-radius: 6px; border: 1px solid #000; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 6px; transition: width 0.3s ease; }
+        .hp-fill { background: linear-gradient(90deg, #8b0000, #ff4444); }
+        .mp-fill { background: linear-gradient(90deg, #00008b, #4444ff); }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 9px; font-weight: bold; line-height: 12px; color: #fff; text-shadow: 1px 1px 1px #000; }
+
+        .hud-extra { display: flex; justify-content: space-between; font-size: 10px; color: #aaa; margin-top: 2px; }
+        .hud-adena { color: #f1fa8c; }
+
+        /* =========================================
+           БЛОК СКИЛЛОВ (Правый нижний угол)
+           ========================================= */
+        .skill-cluster { position: absolute; bottom: 20px; right: 20px; width: 160px; height: 160px; }
+        
+        .action-btn {
+            position: absolute; border-radius: 50%; font-weight: bold; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            border: 2px solid #555; background: rgba(20, 20, 25, 0.8);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6); color: white;
+            transition: transform 0.1s;
+        }
+        .action-btn:active { transform: scale(0.9); border-color: #d4af37; }
+
+        /* Главная атака */
+        .attack-main { 
+            width: 75px; height: 75px; bottom: 0; right: 0; font-size: 24px;
+            border-color: #d4af37; background: radial-gradient(circle, #7a1c1c, #4d1010);
+        }
+
+        /* 3 Спелла (расположены полукругом) */
+        .spell-1 { width: 50px; height: 50px; bottom: 0px; right: 90px; font-size: 18px; }
+        .spell-2 { width: 50px; height: 50px; bottom: 65px; right: 75px; font-size: 18px; }
+        .spell-3 { width: 50px; height: 50px; bottom: 95px; right: 15px; font-size: 18px; }
+
+        /* =========================================
+           ГЛАВНОЕ МЕНЮ (Справа вверху)
+           ========================================= */
+        .top-menu { position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; }
+        .menu-btn { background: rgba(15, 15, 20, 0.8); color: #d4af37; border: 1px solid #d4af37; padding: 8px; border-radius: 50%; width: 40px; height: 40px; font-size: 16px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -60,60 +102,85 @@
     <div id="creation-screen">
         <div class="creation-title">Выбор Пути Героя</div>
         <div class="class-grid">
-            <div class="class-card" onclick="createCharacter('warrior')">⚔️ Воин (Gladiator)</div>
-            <div class="class-card" onclick="createCharacter('archer')">🏹 Стрелок (Hawkeye)</div>
-            <div class="class-card" onclick="createCharacter('mage')">🔮 Маг (Spellsinger)</div>
-            <div class="class-card" onclick="createCharacter('overlord')">📜 Оверлорд (Overlord)</div>
+            <div class="class-card" onclick="createCharacter('warrior')">⚔️ Воин</div>
+            <div class="class-card" onclick="createCharacter('archer')">🏹 Стрелок</div>
+            <div class="class-card" onclick="createCharacter('mage')">🔮 Маг</div>
+            <div class="class-card" onclick="createCharacter('overlord')">📜 Оверлорд</div>
         </div>
     </div>
 
     <div id="game-screen">
         <div id="3d-canvas-container"></div>
-        
-        <!-- Зона для вращения камеры (свайпом) -->
         <div id="camera-zone"></div>
-        
-        <!-- Зона джойстика бега -->
         <div id="joystick-zone"></div>
         
         <div id="ui-layer">
-            <div class="stats-panel interactive">
-                <p><span id="username" class="highlight"></span> [<span id="class_type" style="color:#ffb86c;"></span>]</p>
-                <p>Ур: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
-                <p style="color: #f1fa8c;">Адена: <span id="adena">0</span></p>
-                <p style="color: #ff5555;">HP: <span id="hp">100</span>/<span id="max_hp">100</span></p>
-                <p style="color: #5555ff;">MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
+            
+            <!-- КРАСИВЫЙ HUD ИГРОКА -->
+            <div class="player-hud interactive">
+                <div class="avatar-box">
+                    <!-- Сюда подставится картинка класса (voin.png, mage.png и тд) -->
+                    <img id="hud-avatar" src="https://via.placeholder.com/60" class="avatar-img">
+                    <div class="level-badge" id="level">1</div>
+                </div>
+                
+                <div class="hud-info">
+                    <div class="hud-name"><span id="username">Герой</span> <span id="class_type" class="hud-class">MAGE</span></div>
+                    
+                    <!-- Полоска HP -->
+                    <div class="bar-container">
+                        <div class="bar-fill hp-fill" id="hp-bar-width" style="width: 100%;"></div>
+                        <div class="bar-text"><span id="hp">100</span> / <span id="max_hp">100</span></div>
+                    </div>
+                    
+                    <!-- Полоска MP -->
+                    <div class="bar-container">
+                        <div class="bar-fill mp-fill" id="mp-bar-width" style="width: 100%;"></div>
+                        <div class="bar-text"><span id="mp">50</span> / <span id="max_mp">50</span></div>
+                    </div>
+
+                    <div class="hud-extra">
+                        <span class="hud-adena">💎 <span id="adena">0</span></span>
+                        <span>EXP: <span id="exp">0</span></span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Верхнее меню -->
             <div class="top-menu interactive">
-                <button class="menu-btn" onclick="alert('Открыт Инвентарь!')">🎒 Инвентарь</button>
-                <button class="menu-btn" onclick="alert('Открыт Магазин!')">⚖️ Магазин</button>
+                <div class="menu-btn" onclick="alert('Инвентарь')">🎒</div>
+                <div class="menu-btn" onclick="alert('Магазин')">⚖️</div>
             </div>
-            <div class="action-panel interactive">
-                <button class="attack-btn" onclick="sendAction('attack')">⚔️<br>Удар</button>
+
+            <!-- БЛОК СКИЛЛОВ (Как в MOBA) -->
+            <div class="skill-cluster interactive">
+                <!-- Спеллы вокруг -->
+                <div class="action-btn spell-1" onclick="useSkill(1)">⚡</div>
+                <div class="action-btn spell-2" onclick="useSkill(2)">🔥</div>
+                <div class="action-btn spell-3" onclick="useSkill(3)">🛡️</div>
+                <!-- Главная атака -->
+                <div class="action-btn attack-main" onclick="sendAction('attack')">⚔️</div>
             </div>
+            
         </div>
     </div>
 
-    <!-- THREE.JS Скрипт с 360 КАМЕРОЙ -->
+    <!-- THREE.JS Скрипт (Остался прежним, с 360 камерой) -->
     <script>
         let scene, camera, renderer, playerMesh;
         let moveVector = { x: 0, z: 0 };
         const playerSpeed = 0.12;
-
-        // Переменные для орбитальной камеры
-        let cameraAngleX = 0; // Вращение вокруг персонажа (лево/право)
-        let cameraAngleY = 0.6; // Высота камеры (вверх/вниз)
-        const cameraDistance = 14; // Отдаление камеры
+        let cameraAngleX = 0; 
+        let cameraAngleY = 0.6; 
+        const cameraDistance = 14; 
 
         function init3DWorld() {
             const container = document.getElementById('3d-canvas-container');
-            
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x111118);
             scene.fog = new THREE.Fog(0x111118, 15, 60); 
 
             camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
-            
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
@@ -127,23 +194,14 @@
             const gridHelper = new THREE.GridHelper(200, 200, 0x443c24, 0x222222);
             scene.add(gridHelper);
 
-            // Игрок
             const geometry = new THREE.BoxGeometry(1, 2, 1);
             const material = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
             playerMesh = new THREE.Mesh(geometry, material);
             playerMesh.position.y = 1;
             scene.add(playerMesh);
 
-            // НАСТРОЙКА ДЖОЙСТИКА (БЕГ)
             const joystickZone = document.getElementById('joystick-zone');
-            const manager = nipplejs.create({
-                zone: joystickZone,
-                mode: 'dynamic', 
-                color: 'white',
-                size: 120,
-                opacity: 0.5
-            });
-
+            const manager = nipplejs.create({ zone: joystickZone, mode: 'dynamic', color: 'white', size: 120, opacity: 0.5 });
             manager.on('move', function (evt, data) {
                 if (data && data.angle) {
                     const angle = data.angle.radian;
@@ -154,7 +212,6 @@
             });
             manager.on('end', function () { moveVector.x = 0; moveVector.z = 0; });
 
-            // НАСТРОЙКА 360-КАМЕРЫ (СВАЙПЫ)
             const cameraZone = document.getElementById('camera-zone');
             let isDragging = false;
             let previousTouch = { x: 0, y: 0 };
@@ -164,25 +221,16 @@
                 previousTouch.x = e.touches ? e.touches[0].pageX : e.pageX;
                 previousTouch.y = e.touches ? e.touches[0].pageY : e.pageY;
             }
-
             function onPointerMove(e) {
                 if (!isDragging) return;
                 const currentX = e.touches ? e.touches[0].pageX : e.pageX;
                 const currentY = e.touches ? e.touches[0].pageY : e.pageY;
-
-                const deltaX = currentX - previousTouch.x;
-                const deltaY = currentY - previousTouch.y;
-
-                cameraAngleX -= deltaX * 0.01; // Чувствительность влево/вправо
-                cameraAngleY += deltaY * 0.01; // Чувствительность вверх/вниз
-
-                // Ограничиваем наклон камеры, чтобы не заглядывать под землю и не переворачиваться
+                cameraAngleX -= (currentX - previousTouch.x) * 0.01; 
+                cameraAngleY += (currentY - previousTouch.y) * 0.01; 
                 cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
-
                 previousTouch.x = currentX;
                 previousTouch.y = currentY;
             }
-
             function onPointerUp() { isDragging = false; }
 
             cameraZone.addEventListener('mousedown', onPointerDown);
@@ -203,38 +251,23 @@
 
         function animate() {
             requestAnimationFrame(animate);
-
             if (playerMesh) {
-                // БЕГ ОТНОСИТЕЛЬНО КАМЕРЫ
                 if (Math.abs(moveVector.x) > 0 || Math.abs(moveVector.z) > 0) {
-                    
-                    // Вычисляем направление бега в зависимости от того, куда смотрит камера
-                    const c = Math.cos(cameraAngleX);
-                    const s = Math.sin(cameraAngleX);
-                    
+                    const c = Math.cos(cameraAngleX), s = Math.sin(cameraAngleX);
                     const realX = moveVector.x * c + moveVector.z * s;
                     const realZ = -moveVector.x * s + moveVector.z * c;
 
                     playerMesh.position.x += realX * playerSpeed;
                     playerMesh.position.z += realZ * playerSpeed;
 
-                    const targetPosition = new THREE.Vector3(
-                        playerMesh.position.x + realX,
-                        playerMesh.position.y,
-                        playerMesh.position.z + realZ
-                    );
-                    playerMesh.lookAt(targetPosition);
+                    playerMesh.lookAt(new THREE.Vector3(playerMesh.position.x + realX, playerMesh.position.y, playerMesh.position.z + realZ));
                 }
 
-                // ПОЗИЦИОНИРОВАНИЕ КАМЕРЫ ПО КРУГУ (Сферические координаты)
                 camera.position.x = playerMesh.position.x + cameraDistance * Math.sin(cameraAngleX) * Math.cos(cameraAngleY);
                 camera.position.y = playerMesh.position.y + cameraDistance * Math.sin(cameraAngleY);
                 camera.position.z = playerMesh.position.z + cameraDistance * Math.cos(cameraAngleX) * Math.cos(cameraAngleY);
-                
-                // Камера всегда смотрит на персонажа
                 camera.lookAt(playerMesh.position);
             }
-
             renderer.render(scene, camera);
         }
     </script>
@@ -284,25 +317,58 @@
         }
 
         function updateUI(u) {
+            // Обновляем текст
             document.getElementById('username').innerText = u.username;
-            document.getElementById('class_type').innerText = u.class_type.toUpperCase();
+            document.getElementById('class_type').innerText = u.class_type;
             document.getElementById('level').innerText = u.level;
             document.getElementById('exp').innerText = u.exp;
             document.getElementById('adena').innerText = u.adena;
+            
             document.getElementById('hp').innerText = u.hp;
             document.getElementById('max_hp').innerText = u.max_hp;
             document.getElementById('mp').innerText = u.mp;
             document.getElementById('max_mp').innerText = u.max_mp;
+
+            // Логика заполнения полосок (в процентах)
+            let hpPercent = Math.max(0, Math.min(100, (u.hp / u.max_hp) * 100));
+            let mpPercent = Math.max(0, Math.min(100, (u.mp / u.max_mp) * 100));
+            
+            document.getElementById('hp-bar-width').style.width = hpPercent + '%';
+            document.getElementById('mp-bar-width').style.width = mpPercent + '%';
+
+            // Меняем аватарку в зависимости от класса (убедитесь что имена файлов верные)
+            let avatarUrl = 'img/humanvoin.png'; // По умолчанию
+            if (u.class_type === 'warrior') avatarUrl = 'img/humanvoin.png';
+            if (u.class_type === 'archer') avatarUrl = 'img/elfluk.png';
+            if (u.class_type === 'mage') avatarUrl = 'img/humanmaq.png';
+            if (u.class_type === 'overlord') avatarUrl = 'img/qaraelftx.png';
+            document.getElementById('hud-avatar').src = avatarUrl;
         }
 
+        // Анимация при атаке
         function sendAction(actionType) {
             syncWithServer(actionType);
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             
-            if (playerMesh && actionType === 'attack') {
+            if (playerMesh) {
                 playerMesh.rotation.y += Math.PI * 2;
                 playerMesh.position.y = 2; 
                 setTimeout(() => { playerMesh.position.y = 1; }, 150); 
+            }
+        }
+
+        // Тестовая функция для кнопок скиллов
+        function useSkill(skillNumber) {
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            
+            // Временная визуализация магии на 3D кубике
+            if (playerMesh) {
+                if (skillNumber === 1) playerMesh.material.color.setHex(0x5555ff); // Синий (Молния)
+                if (skillNumber === 2) playerMesh.material.color.setHex(0xff5555); // Красный (Огонь)
+                if (skillNumber === 3) playerMesh.material.color.setHex(0x55ff55); // Зеленый (Щит)
+                
+                // Возвращаем золотой цвет через секунду
+                setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 500); 
             }
         }
 
