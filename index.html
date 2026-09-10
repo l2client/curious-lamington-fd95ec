@@ -11,11 +11,27 @@
     <style>
         body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; touch-action: none; }
         
-        /* СТАРТОВЫЙ ЭКРАН (Решает проблему с авто-поворотом) */
-        #start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; background: #0c0c0e; z-index: 9999; }
+        /* СТРОГИЙ БЛОКАТОР ВЕРТИКАЛЬНОГО РЕЖИМА */
+        #orientation-lock-screen {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #08080a; z-index: 99999; flex-direction: column; justify-content: center; align-items: center;
+            color: #d4af37; text-align: center; padding: 20px; box-sizing: border-box;
+        }
+        .lock-icon { font-size: 64px; margin-bottom: 20px; animation: pulse 1.5s infinite ease-in-out; }
+        .lock-text { font-size: 20px; font-weight: bold; text-shadow: 0 0 10px rgba(212, 175, 55, 0.4); }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+
+        /* Показываем заглушку ТОЛЬКО если телефон вертикальный (portrait) */
+        @media screen and (orientation: portrait) {
+            #orientation-lock-screen { display: flex !important; }
+            #game-screen, #creation-screen, #start-screen { display: none !important; }
+        }
+
+        /* СТАРТОВЫЙ ЭКРАН */
+        #start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; background: #0c0c0e; z-index: 10000; }
         .start-logo { font-size: 32px; color: #d4af37; font-weight: bold; margin-bottom: 40px; text-shadow: 0 0 20px rgba(212, 175, 55, 0.6); text-transform: uppercase; letter-spacing: 2px;}
         .play-btn { background: radial-gradient(circle, #7a1c1c, #300000); border: 2px solid #d4af37; color: #fff; font-size: 24px; font-weight: bold; padding: 20px 60px; border-radius: 12px; cursor: pointer; box-shadow: 0 0 30px rgba(212, 175, 55, 0.4); transition: 0.2s; }
-        .play-btn:active { transform: scale(0.9); box-shadow: 0 0 50px rgba(212, 175, 55, 0.8); }
+        .play-btn:active { transform: scale(0.9); }
 
         /* Экран создания */
         #creation-screen { display: none; flex-direction: column; justify-content: center; align-items: center; width: 100vw; height: 100vh; padding: 20px; box-sizing: border-box; background: #000; position: relative; z-index: 100; }
@@ -73,10 +89,15 @@
 </head>
 <body>
 
+    <!-- ЭКРАН-БЛОКАТОР (Требует повернуть телефон горизонтально) -->
+    <div id="orientation-lock-screen">
+        <div class="lock-icon">📱 ⟳</div>
+        <div class="lock-text">Пожалуйста, поверните телефон<br>в горизонтальное положение</div>
+    </div>
+
     <!-- СТАРТОВЫЙ ЭКРАН -->
     <div id="start-screen">
         <div class="start-logo">Lineage II Mobile</div>
-        <!-- Именно это нажатие дает нам права перевернуть экран! -->
         <button class="play-btn" onpointerdown="enterGame()">▶ ВОЙТИ В МИР</button>
     </div>
 
@@ -122,7 +143,7 @@
             </div>
 
             <div class="skill-cluster interactive">
-                <div class="action-btn spell-1" onpointerdown="useSkill(1)">⚡</div>
+                <div class="action-bin spell-1" onpointerdown="useSkill(1)">⚡</div>
                 <div class="action-btn spell-2" onpointerdown="useSkill(2)">🔥</div>
                 <div class="action-btn spell-3" onpointerdown="useSkill(3)">🛡️</div>
                 <div class="action-btn attack-main" onpointerdown="sendAction('attack')">⚔️</div>
@@ -136,42 +157,26 @@
         tg.expand();
         tg.disableVerticalSwipes();
         
-        // ФУНКЦИЯ ПРИНУДИТЕЛЬНОГО ПОВОРОТА ЭКРАНА
+        try {
+            if (tg.requestFullscreen) tg.requestFullscreen();
+            if (tg.lockOrientation) tg.lockOrientation('landscape');
+        } catch (error) {}
+
         function forceLandscape() {
-            // 1. Попытка через API Telegram
-            try { if (tg.requestFullscreen) tg.requestFullscreen(); } catch (e) {}
-            
-            // 2. Аппаратный поворот через браузер телефона (Работает на Android/Poco)
-            let docEl = document.documentElement;
-            let requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
-            
-            if (requestFS) {
-                requestFS.call(docEl).then(() => {
-                    // После перехода в полный экран жестко блокируем горизонтальную ориентацию
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(err => console.log(err));
-                    }
-                }).catch(err => console.log(err));
-            }
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(err => {});
+                }
+            } catch (e) {}
         }
 
-        // Вызывается при нажатии кнопки "▶ ВОЙТИ В МИР"
         function enterGame() {
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
-            
-            // Запрашиваем переворот экрана
             forceLandscape();
-            
-            // Прячем стартовый экран
             document.getElementById('start-screen').style.display = 'none';
-            
-            // Связываемся с сервером (базой данных)
             syncWithServer();
         }
 
-        // ==========================================
-        // ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ (Three.js, Мультитач)
-        // ==========================================
         let scene, camera, renderer, playerMesh;
         let moveVector = { x: 0, z: 0 };
         const playerSpeed = 0.12;
@@ -310,7 +315,7 @@
         }
 
         function createCharacter(classType) {
-            forceLandscape(); // Запрашиваем переворот еще раз для надежности
+            forceLandscape();
             syncWithServer('create', classType);
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
@@ -363,6 +368,8 @@
                 else { playerMesh.material.color.setHex(0xffffff); setTimeout(() => { playerMesh.material.color.setHex(0xd4af37); }, 300); }
             }
         }
+
+        syncWithServer();
     </script>
 </body>
 </html>
