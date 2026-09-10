@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; }
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; overflow: hidden; user-select: none; touch-action: none; }
         
         /* Экран создания */
         #creation-screen { display: none; padding: 20px; text-align: center; position: relative; z-index: 100; }
@@ -20,27 +20,30 @@
         /* Игровой экран */
         #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
         
-        /* 1. ФОНОВЫЙ 3D-МИР (Заполняет весь экран) */
+        /* 1. ФОНОВЫЙ 3D-МИР */
         #3d-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
         
-        /* 2. ЗОНА ДЖОЙСТИКА (Только левая нижняя четверть экрана) */
+        /* 2. ЗОНА ВРАЩЕНИЯ КАМЕРЫ (Весь экран под UI) */
+        #camera-zone { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 4; }
+
+        /* 3. ЗОНА ДЖОЙСТИКА (Только левая половина) */
         #joystick-zone { position: absolute; bottom: 0; left: 0; width: 50vw; height: 50vh; z-index: 5; }
 
-        /* 3. ИНТЕРФЕЙС ПОВЕРХ 3D-МИРА */
+        /* 4. ИНТЕРФЕЙС ПОВЕРХ ВСЕГО */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
-        .interactive { pointer-events: auto; } /* Чтобы кнопки можно было нажимать */
+        .interactive { pointer-events: auto; } 
 
-        /* Статы в левом верхнем углу */
+        /* Статы */
         .stats-panel { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.6); padding: 8px 12px; border-radius: 8px; border: 1px solid #443c24; font-size: 12px; }
         .stats-panel p { margin: 4px 0; }
         .highlight { color: #50fa7b; font-weight: bold; }
 
-        /* Главное меню в правом верхнем углу (Инвентарь, Магазин) */
+        /* Главное меню */
         .top-menu { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
         .menu-btn { background: rgba(20, 20, 20, 0.8); color: #d4af37; border: 1px solid #d4af37; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .menu-btn:active { background: #d4af37; color: #000; }
 
-        /* Боевые кнопки в правом нижнем углу */
+        /* Боевые кнопки */
         .action-panel { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
         .attack-btn { 
             background: radial-gradient(circle, #7a1c1c, #4d1010); 
@@ -54,7 +57,6 @@
 </head>
 <body>
 
-    <!-- Меню создания -->
     <div id="creation-screen">
         <div class="creation-title">Выбор Пути Героя</div>
         <div class="class-grid">
@@ -65,19 +67,16 @@
         </div>
     </div>
 
-    <!-- Игровой мир -->
     <div id="game-screen">
-        
-        <!-- 1. 3D Движок -->
         <div id="3d-canvas-container"></div>
         
-        <!-- 2. Зона для пальца (Джойстик появится только тут) -->
+        <!-- Зона для вращения камеры (свайпом) -->
+        <div id="camera-zone"></div>
+        
+        <!-- Зона джойстика бега -->
         <div id="joystick-zone"></div>
         
-        <!-- 3. UI Интерфейс -->
         <div id="ui-layer">
-            
-            <!-- Статы (Слева вверху) -->
             <div class="stats-panel interactive">
                 <p><span id="username" class="highlight"></span> [<span id="class_type" style="color:#ffb86c;"></span>]</p>
                 <p>Ур: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
@@ -85,62 +84,57 @@
                 <p style="color: #ff5555;">HP: <span id="hp">100</span>/<span id="max_hp">100</span></p>
                 <p style="color: #5555ff;">MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
             </div>
-
-            <!-- Игровое меню (Справа вверху) -->
             <div class="top-menu interactive">
                 <button class="menu-btn" onclick="alert('Открыт Инвентарь!')">🎒 Инвентарь</button>
                 <button class="menu-btn" onclick="alert('Открыт Магазин!')">⚖️ Магазин</button>
             </div>
-
-            <!-- Кнопки действий (Справа внизу) -->
             <div class="action-panel interactive">
                 <button class="attack-btn" onclick="sendAction('attack')">⚔️<br>Удар</button>
             </div>
-            
         </div>
     </div>
 
-    <!-- THREE.JS Скрипт -->
+    <!-- THREE.JS Скрипт с 360 КАМЕРОЙ -->
     <script>
         let scene, camera, renderer, playerMesh;
         let moveVector = { x: 0, z: 0 };
         const playerSpeed = 0.12;
 
+        // Переменные для орбитальной камеры
+        let cameraAngleX = 0; // Вращение вокруг персонажа (лево/право)
+        let cameraAngleY = 0.6; // Высота камеры (вверх/вниз)
+        const cameraDistance = 14; // Отдаление камеры
+
         function init3DWorld() {
             const container = document.getElementById('3d-canvas-container');
             
-            // Сцена и туман
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x111118);
             scene.fog = new THREE.Fog(0x111118, 15, 60); 
 
-            // Камера
             camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
             
-            // Рендерер
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            // Свет
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
             dirLight.position.set(10, 20, 10);
             scene.add(dirLight);
 
-            // Пол (Бесконечная сетка)
             const gridHelper = new THREE.GridHelper(200, 200, 0x443c24, 0x222222);
             scene.add(gridHelper);
 
-            // Временный Игрок (Золотой блок)
+            // Игрок
             const geometry = new THREE.BoxGeometry(1, 2, 1);
             const material = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
             playerMesh = new THREE.Mesh(geometry, material);
             playerMesh.position.y = 1;
             scene.add(playerMesh);
 
-            // Джойстик (Только в левой зоне)
+            // НАСТРОЙКА ДЖОЙСТИКА (БЕГ)
             const joystickZone = document.getElementById('joystick-zone');
             const manager = nipplejs.create({
                 zone: joystickZone,
@@ -158,19 +152,51 @@
                     moveVector.z = -Math.sin(angle) * force;
                 }
             });
+            manager.on('end', function () { moveVector.x = 0; moveVector.z = 0; });
 
-            manager.on('end', function () {
-                moveVector.x = 0;
-                moveVector.z = 0;
-            });
+            // НАСТРОЙКА 360-КАМЕРЫ (СВАЙПЫ)
+            const cameraZone = document.getElementById('camera-zone');
+            let isDragging = false;
+            let previousTouch = { x: 0, y: 0 };
 
-            // Автоматическая подгонка экрана при перевороте телефона
-            window.addEventListener('resize', onWindowResize, false);
-            function onWindowResize() {
+            function onPointerDown(e) {
+                isDragging = true;
+                previousTouch.x = e.touches ? e.touches[0].pageX : e.pageX;
+                previousTouch.y = e.touches ? e.touches[0].pageY : e.pageY;
+            }
+
+            function onPointerMove(e) {
+                if (!isDragging) return;
+                const currentX = e.touches ? e.touches[0].pageX : e.pageX;
+                const currentY = e.touches ? e.touches[0].pageY : e.pageY;
+
+                const deltaX = currentX - previousTouch.x;
+                const deltaY = currentY - previousTouch.y;
+
+                cameraAngleX -= deltaX * 0.01; // Чувствительность влево/вправо
+                cameraAngleY += deltaY * 0.01; // Чувствительность вверх/вниз
+
+                // Ограничиваем наклон камеры, чтобы не заглядывать под землю и не переворачиваться
+                cameraAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraAngleY));
+
+                previousTouch.x = currentX;
+                previousTouch.y = currentY;
+            }
+
+            function onPointerUp() { isDragging = false; }
+
+            cameraZone.addEventListener('mousedown', onPointerDown);
+            cameraZone.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+            cameraZone.addEventListener('touchstart', onPointerDown);
+            cameraZone.addEventListener('touchmove', onPointerMove);
+            window.addEventListener('touchend', onPointerUp);
+
+            window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-            }
+            });
 
             animate();
         }
@@ -179,22 +205,33 @@
             requestAnimationFrame(animate);
 
             if (playerMesh) {
+                // БЕГ ОТНОСИТЕЛЬНО КАМЕРЫ
                 if (Math.abs(moveVector.x) > 0 || Math.abs(moveVector.z) > 0) {
-                    playerMesh.position.x += moveVector.x * playerSpeed;
-                    playerMesh.position.z += moveVector.z * playerSpeed;
+                    
+                    // Вычисляем направление бега в зависимости от того, куда смотрит камера
+                    const c = Math.cos(cameraAngleX);
+                    const s = Math.sin(cameraAngleX);
+                    
+                    const realX = moveVector.x * c + moveVector.z * s;
+                    const realZ = -moveVector.x * s + moveVector.z * c;
+
+                    playerMesh.position.x += realX * playerSpeed;
+                    playerMesh.position.z += realZ * playerSpeed;
 
                     const targetPosition = new THREE.Vector3(
-                        playerMesh.position.x + moveVector.x,
+                        playerMesh.position.x + realX,
                         playerMesh.position.y,
-                        playerMesh.position.z + moveVector.z
+                        playerMesh.position.z + realZ
                     );
                     playerMesh.lookAt(targetPosition);
                 }
 
-                // Улучшенная позиция камеры (как в мобильных RPG)
-                camera.position.x = playerMesh.position.x;
-                camera.position.y = playerMesh.position.y + 12; // Высота над головой
-                camera.position.z = playerMesh.position.z + 14; // Отдаление
+                // ПОЗИЦИОНИРОВАНИЕ КАМЕРЫ ПО КРУГУ (Сферические координаты)
+                camera.position.x = playerMesh.position.x + cameraDistance * Math.sin(cameraAngleX) * Math.cos(cameraAngleY);
+                camera.position.y = playerMesh.position.y + cameraDistance * Math.sin(cameraAngleY);
+                camera.position.z = playerMesh.position.z + cameraDistance * Math.cos(cameraAngleX) * Math.cos(cameraAngleY);
+                
+                // Камера всегда смотрит на персонажа
                 camera.lookAt(playerMesh.position);
             }
 
@@ -262,9 +299,8 @@
             syncWithServer(actionType);
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             
-            // Временная анимация удара кубика
             if (playerMesh && actionType === 'attack') {
-                playerMesh.rotation.y += Math.PI * 2; // Круговой удар
+                playerMesh.rotation.y += Math.PI * 2;
                 playerMesh.position.y = 2; 
                 setTimeout(() => { playerMesh.position.y = 1; }, 150); 
             }
