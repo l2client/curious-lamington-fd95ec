@@ -2,95 +2,67 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L2 Telegram MMORPG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>L2 Telegram 3D MMORPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <!-- Подключаем 3D движок Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Подключаем библиотеку для виртуального джойстика -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    
     <style>
-        body { background-color: #0c0c0e; color: #d4af37; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; padding: 10px; margin: 0; }
-        .container { max-width: 410px; margin: 0 auto; }
+        body { background-color: #0c0c0e; color: #d4af37; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; padding: 0; margin: 0; overflow: hidden; }
         
         #creation-screen { display: none; padding: 10px; }
         .creation-title { font-size: 20px; color: #f1fa8c; margin-bottom: 15px; }
-        .class-grid { display: flex; flex-direction: column; gap: 15px; }
+        .class-grid { display: flex; flex-direction: column; gap: 10px; padding: 0 15px; }
+        .class-card { background: #18181c; border: 1px solid #443c24; padding: 15px; border-radius: 8px; cursor: pointer; color: #fff; font-weight: bold; }
         
-        .class-card { background: linear-gradient(145deg, #18181c, #111115); border: 1px solid #443c24; border-radius: 10px; cursor: pointer; text-align: left; overflow: hidden; }
-        .class-card:hover { border-color: #d4af37; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(212,175,55,0.2); }
+        #game-screen { display: none; width: 100vw; height: 100vh; position: relative; }
         
-        /* Стили для картинок в меню создания */
-        .class-image { width: 100%; height: 140px; object-fit: contain; background-color: #000; border-bottom: 1px solid #443c24; padding: 5px 0; }
-        .class-info { padding: 10px 15px; }
-        .class-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; color: #ffb86c; }
-        .class-tag-phys { color: #50fa7b; font-size: 11px; background: rgba(80,250,123,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(80,250,123,0.3); }
-        .class-tag-mag { color: #8be9fd; font-size: 11px; background: rgba(139,233,253,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(139,233,253,0.3); }
-        .class-desc { font-size: 12px; color: #aaa; margin-top: 6px; }
+        /* Контейнер для 3D мира */
+        #3d-container { width: 100%; height: 55vh; position: relative; background: #000; border-bottom: 2px solid #d4af37; }
+        
+        /* Зона для джойстика поверх 3D мира */
+        #joystick-zone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
 
-        #game-screen { display: none; }
-        
-        #phaser-game-container {
-            width: 100%; height: 220px; margin: 10px 0; border-radius: 10px; overflow: hidden;
-            border: 2px solid #443c24; box-shadow: inset 0 0 20px #000;
-        }
-
-        .stats-box { background: #16161a; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; text-align: left; font-size: 14px; }
-        .stats-box p { margin: 7px 0; }
+        /* Интерфейс (UI) */
+        #ui-container { padding: 10px; height: 45vh; overflow-y: auto; background: #0c0c0e; }
+        .stats-box { background: #16161a; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; text-align: left; font-size: 13px; }
+        .stats-box p { margin: 5px 0; }
         .highlight { color: #50fa7b; font-weight: bold; }
         
         .btn { 
             background: linear-gradient(to bottom, #7a1c1c, #4d1010); 
-            color: white; padding: 14px; border: 1px solid #d4af37; width: 100%; 
-            font-size: 17px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;
+            color: white; padding: 12px; border: 1px solid #d4af37; width: 100%; 
+            font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px;
         }
         .btn:active { background: #942424; transform: scale(0.98); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2 style="margin-bottom: 15px;">Lineage II: Visual</h2>
-
-        <!-- Экран выбора классов (теперь с вашими картинками) -->
-        <div id="creation-screen">
-            <div class="creation-title">Выбор Пути Героя</div>
-            <div class="class-grid">
-                
-                <div class="class-card" onclick="createCharacter('warrior')">
-                    <img src="img/humanvoin.png" class="class-image">
-                    <div class="class-info">
-                        <div class="class-header"><span>⚔️ Воин</span><span class="class-tag-phys">Физ. ДД</span></div>
-                        <div class="class-desc">Тяжелая броня и огромный урон.</div>
-                    </div>
-                </div>
-                
-                <div class="class-card" onclick="createCharacter('archer')">
-                    <img src="img/elfluk.png" class="class-image">
-                    <div class="class-info">
-                        <div class="class-header"><span>🏹 Стрелок</span><span class="class-tag-phys">Физ. ДД</span></div>
-                        <div class="class-desc">Молниеносные атаки из лука.</div>
-                    </div>
-                </div>
-
-                <div class="class-card" onclick="createCharacter('mage')">
-                    <img src="img/humanmaq.png" class="class-image">
-                    <div class="class-info">
-                        <div class="class-header"><span>🔮 Маг</span><span class="class-tag-mag">Маг. ДД</span></div>
-                        <div class="class-desc">Сокрушительная магия стихий.</div>
-                    </div>
-                </div>
-
-                <div class="class-card" onclick="createCharacter('overlord')">
-                    <img src="img/qaraelftx.png" class="class-image">
-                    <div class="class-info">
-                        <div class="class-header"><span>📜 Оверлорд</span><span class="class-tag-mag">Саппорт</span></div>
-                        <div class="class-desc">Темные искусства и проклятия.</div>
-                    </div>
-                </div>
-
-            </div>
+    <!-- Экран создания персонажа -->
+    <div id="creation-screen">
+        <div class="creation-title">Создание персонажа</div>
+        <div class="class-grid">
+            <div class="class-card" onclick="createCharacter('warrior')">⚔️ Воин (Gladiator)</div>
+            <div class="class-card" onclick="createCharacter('archer')">🏹 Стрелок (Hawkeye)</div>
+            <div class="class-card" onclick="createCharacter('mage')">🔮 Маг (Spellsinger)</div>
+            <div class="class-card" onclick="createCharacter('overlord')">📜 Оверлорд (Overlord)</div>
         </div>
+    </div>
 
-        <div id="game-screen">
-            <div id="phaser-game-container"></div>
-            <button class="btn" onclick="sendAction('attack')">⚔️ Атаковать моба</button>
+    <!-- Основной игровой экран -->
+    <div id="game-screen">
+        
+        <!-- Окно 3D движка и джойстик -->
+        <div id="3d-container">
+            <div id="joystick-zone"></div>
+        </div>
+        
+        <!-- Игровой интерфейс (Меню, статы, кнопки) -->
+        <div id="ui-container">
+            <button class="btn" onclick="sendAction('attack')">⚔️ Атаковать (Тест)</button>
             
             <div class="stats-box">
                 <p>Игрок: <span id="username" class="highlight"></span> [<span id="class_type" style="color:#ffb86c;"></span>]</p>
@@ -103,133 +75,118 @@
         </div>
     </div>
 
-    <!-- ДВИЖОК PHASER -->
+    <!-- ЛОГИКА 3D ДВИЖКА (THREE.JS) -->
     <script>
-        let gameScene;
+        let scene, camera, renderer, playerMesh;
+        let moveVector = { x: 0, z: 0 };
+        const playerSpeed = 0.15;
 
-        class BattleScene extends Phaser.Scene {
-            constructor() { super({ key: 'BattleScene' }); }
+        function init3DWorld() {
+            const container = document.getElementById('3d-container');
+            
+            // 1. Создаем сцену
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a24); // Темный фон
+            scene.fog = new THREE.Fog(0x1a1a24, 10, 50); // Туман вдалеке для атмосферы
 
-            preload() {
-                // Загружаем фон (если его нет в папке img, будет черный цвет)
-                this.load.image('bg', 'img/bg-arena.jpg'); 
-                
-                // ЗАГРУЖАЕМ ВСЕ ВАШИ КАРТИНКИ
-                this.load.image('warrior', 'img/humanvoin.png'); 
-                this.load.image('archer', 'img/elfluk.png'); 
-                this.load.image('mage', 'img/humanmaq.png'); 
-                this.load.image('overlord', 'img/qaraelftx.png'); 
-                this.load.image('gremlin', 'img/gremlin.png'); 
-            }
+            // 2. Создаем камеру (вид от 3-го лица)
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            
+            // 3. Создаем рендерер
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
 
-            create() {
-                gameScene = this;
-                
-                this.cameras.main.setBackgroundColor('#1a1a24');
+            // 4. Освещение
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
 
-                // Пытаемся добавить фон
-                try {
-                    let bg = this.add.image(200, 110, 'bg');
-                    bg.setDisplaySize(400, 220); 
-                } catch(e) {}
+            // 5. Создаем пол (Сетка / Grid)
+            const gridHelper = new THREE.GridHelper(100, 100, 0xd4af37, 0x444444);
+            scene.add(gridHelper);
 
-                // Создаем игрока (по умолчанию ставим воина, но он сразу поменяется сервером)
-                this.player = this.add.image(90, 200, 'warrior');
-                this.player.setOrigin(0.5, 1); // Ногами на пол
-                this.fitToHeight(this.player, 120); 
+            // 6. ВРЕМЕННАЯ 3D-модель игрока (Золотой блок, пока не загрузим реального персонажа)
+            const geometry = new THREE.BoxGeometry(1, 2, 1);
+            const material = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
+            playerMesh = new THREE.Mesh(geometry, material);
+            playerMesh.position.y = 1; // Поднимаем над землей
+            scene.add(playerMesh);
 
-                // Создаем монстра (Гремлин)
-                this.monster = this.add.image(310, 200, 'gremlin');
-                this.monster.setOrigin(0.5, 1);
-                this.monster.flipX = true; // Лицом к игроку
-                this.fitToHeight(this.monster, 110);
+            // 7. Инициализация джойстика
+            const joystickZone = document.getElementById('joystick-zone');
+            const manager = nipplejs.create({
+                zone: joystickZone,
+                mode: 'dynamic', // Появляется там, куда нажмет палец
+                color: 'white',
+                size: 100
+            });
 
-                // Анимация дыхания
-                this.tweens.add({
-                    targets: [this.player, this.monster],
-                    scaleY: { value: '-=0.03' }, 
-                    scaleX: { value: '+=0.01' },
-                    duration: 1500,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
-            }
-
-            // ДИНАМИЧЕСКОЕ ИЗМЕНЕНИЕ КЛАССА
-            setPlayerClass(classType) {
-                if (this.textures.exists(classType)) {
-                    this.player.setTexture(classType);
-                    this.fitToHeight(this.player, 120); // Заново подгоняем размер под новую картинку
+            // Обработка движения джойстика
+            manager.on('move', function (evt, data) {
+                if (data && data.angle) {
+                    const angle = data.angle.radian;
+                    const force = Math.min(data.force, 1);
+                    // Переводим 2D угол джойстика в 3D координаты (X и Z)
+                    moveVector.x = Math.cos(angle) * force;
+                    moveVector.z = -Math.sin(angle) * force;
                 }
-            }
+            });
 
-            fitToHeight(sprite, targetHeight) {
-                if (sprite.height > 0) {
-                    let ratio = targetHeight / sprite.height;
-                    sprite.setScale(ratio);
-                }
-            }
+            // Остановка при отпускании пальца
+            manager.on('end', function () {
+                moveVector.x = 0;
+                moveVector.z = 0;
+            });
 
-            playAttackAnimation() {
-                this.tweens.add({
-                    targets: this.player,
-                    x: 140, // Рывок
-                    duration: 100,
-                    yoyo: true,
-                    ease: 'Power2',
-                    onComplete: () => {
-                        this.showDamage(this.monster.x, this.monster.y - this.monster.displayHeight + 20, "-15");
-                        
-                        this.monster.setTint(0xff0000);
-                        setTimeout(() => this.monster.clearTint(), 150);
-                        
-                        this.tweens.add({
-                            targets: this.monster,
-                            x: { from: 310, to: 318 }, // Отброс
-                            duration: 40,
-                            yoyo: true,
-                            repeat: 2
-                        });
-                    }
-                });
-            }
-
-            showDamage(x, y, text) {
-                let dmgText = this.add.text(x, y, text, { font: 'bold 24px Arial', fill: '#ff4444', stroke: '#000000', strokeThickness: 5 });
-                dmgText.setOrigin(0.5, 0.5);
-                
-                this.tweens.add({
-                    targets: dmgText,
-                    y: y - 60,
-                    scale: { from: 0.5, to: 1.2 },
-                    alpha: { from: 1, to: 0 },
-                    duration: 700,
-                    ease: 'Cubic.easeOut',
-                    onComplete: () => { dmgText.destroy(); }
-                });
-            }
+            // 8. Запуск цикла анимации
+            animate();
         }
 
-        const config = {
-            type: Phaser.AUTO,
-            parent: 'phaser-game-container',
-            width: 400,
-            height: 220,
-            transparent: true,
-            scene: BattleScene
-        };
-        const game = new Phaser.Game(config);
+        // Цикл рендеринга (60 кадров в секунду)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (playerMesh) {
+                // Двигаем игрока, если джойстик нажат
+                if (Math.abs(moveVector.x) > 0 || Math.abs(moveVector.z) > 0) {
+                    playerMesh.position.x += moveVector.x * playerSpeed;
+                    playerMesh.position.z += moveVector.z * playerSpeed;
+
+                    // Поворачиваем персонажа лицом по направлению бега
+                    const targetPosition = new THREE.Vector3(
+                        playerMesh.position.x + moveVector.x,
+                        playerMesh.position.y,
+                        playerMesh.position.z + moveVector.z
+                    );
+                    playerMesh.lookAt(targetPosition);
+                }
+
+                // Камера плавно следует за игроком (сверху и сзади)
+                camera.position.x = playerMesh.position.x;
+                camera.position.y = playerMesh.position.y + 8; // Высота камеры
+                camera.position.z = playerMesh.position.z + 10; // Отдаление камеры
+                camera.lookAt(playerMesh.position); // Камера смотрит на игрока
+            }
+
+            renderer.render(scene, camera);
+        }
     </script>
 
-    <!-- СЕРВЕР И ИНТЕРФЕЙС -->
+    <!-- СЕРВЕР И ИНТЕРФЕЙС (NETLIFY & SUPABASE) -->
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+        tg.disableVerticalSwipes(); // Запрещаем Телеграму закрывать окно при свайпах джойстика
+
         let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
         let telegramId = user ? user.id.toString() : "123456789";
         let firstName = user ? (user.first_name || "Герой") : "Тестовый Герой";
         const API_URL = '/.netlify/functions/api';
+
+        let is3DInitialized = false;
 
         function syncWithServer(action = '', classType = '') {
             fetch(API_URL, {
@@ -247,6 +204,12 @@
                         document.getElementById('creation-screen').style.display = 'none';
                         document.getElementById('game-screen').style.display = 'block';
                         updateUI(data.user);
+                        
+                        // Запускаем 3D мир только когда игрок успешно вошел в игру
+                        if (!is3DInitialized) {
+                            init3DWorld();
+                            is3DInitialized = true;
+                        }
                     }
                 }
             })
@@ -272,25 +235,20 @@
             let statsHTML = '';
             if (u.p_atk > 0) {
                 statsHTML += `<p>⚔️ P. Atk: <b>${u.p_atk}</b> | 🛡️ P. Def: <b>${u.p_def}</b></p>`;
-                statsHTML += `<p>⚡ Atk. Speed: <b>${u.p_atk_speed}</b> | 🎯 Crit: <b>${u.crit}%</b></p>`;
             } else {
                 statsHTML += `<p>🔮 M. Atk: <b>${u.m_atk}</b> | 🛡️ M. Def: <b>${u.m_def}</b></p>`;
-                statsHTML += `<p>🌀 Cast. Speed: <b>${u.m_cast_speed}</b> | 🎯 Crit: <b>${u.crit}%</b></p>`;
             }
             document.getElementById('stats-container').innerHTML = statsHTML;
-
-            // ГЛАВНАЯ МАГИЯ: Заставляем движок переключить картинку на арене!
-            if (gameScene) {
-                gameScene.setPlayerClass(u.class_type);
-            }
         }
 
         function sendAction(actionType) {
             syncWithServer(actionType);
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             
-            if (gameScene && actionType === 'attack') {
-                gameScene.playAttackAnimation();
+            // Временная анимация прыжка (для теста кнопки атаки)
+            if (playerMesh && actionType === 'attack') {
+                playerMesh.position.y = 2; // Подпрыгиваем
+                setTimeout(() => { playerMesh.position.y = 1; }, 150); // Падаем обратно
             }
         }
 
