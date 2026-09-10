@@ -12,92 +12,133 @@
         /* Стили экрана создания персонажа */
         #creation-screen { display: none; padding: 10px; }
         .creation-title { font-size: 20px; color: #f1fa8c; margin-bottom: 5px; text-shadow: 0 0 10px rgba(242, 250, 140, 0.3); }
-        .class-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .class-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
         
         .class-card { 
             background: linear-gradient(145deg, #18181c, #111115); 
             border: 1px solid #443c24; 
-            padding: 12px 15px; 
             border-radius: 10px; 
             cursor: pointer; 
             text-align: left; 
+            overflow: hidden;
             transition: all 0.2s ease;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .class-card:hover { border-color: #d4af37; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(212,175,55,0.15); }
+        
+        /* Картинка класса */
+        .class-image { width: 100%; height: 160px; object-fit: cover; border-bottom: 1px solid #443c24; background-color: #222; }
+        .class-info { padding: 12px 15px; }
         .class-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; color: #ffb86c; }
         .class-tag-phys { color: #50fa7b; font-size: 11px; background: rgba(80,250,123,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(80,250,123,0.3); }
         .class-tag-mag { color: #8be9fd; font-size: 11px; background: rgba(139,233,253,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(139,233,253,0.3); }
         .class-desc { font-size: 12px; color: #aaa; margin-top: 6px; line-height: 1.3; }
 
-        /* Игровой интерфейс */
+        /* Игровой интерфейс и Арена */
         #game-screen { display: none; }
+        
+        .battle-arena {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            background: url('https://via.placeholder.com/400x200/1a1a1a/444?text=Локация:+Talking+Island') center/cover;
+            height: 200px; border-radius: 10px; border: 2px solid #443c24;
+            margin: 10px 0; padding: 10px; box-shadow: inset 0 0 20px #000;
+        }
+        .combatant { display: flex; flex-direction: column; align-items: center; width: 45%; }
+        .combatant img { width: 100px; height: 130px; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8)); }
+        .combatant-name { background: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 5px; font-size: 12px; margin-top: 5px; border: 1px solid #d4af37; }
+        .vs-badge { font-size: 24px; font-weight: bold; color: #ff5555; text-shadow: 0 0 10px #000; margin-bottom: 50px; }
+
         .stats-box { background: #16161a; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; text-align: left; font-size: 14px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .stats-box p { margin: 7px 0; }
         .highlight { color: #50fa7b; font-weight: bold; }
         
         .btn { 
             background: linear-gradient(to bottom, #7a1c1c, #4d1010); 
-            color: white; 
-            padding: 14px; 
-            border: 1px solid #d4af37; 
-            width: 100%; 
-            margin-top: 15px; 
-            font-size: 17px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            color: white; padding: 14px; border: 1px solid #d4af37; width: 100%; 
+            font-size: 17px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); margin-bottom: 20px;
         }
         .btn:active { background: #942424; transform: scale(0.98); }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 style="letter-spacing: 1px; margin-bottom: 15px; color: #d4af37;">Lineage II: Classic</h2>
+        <h2 style="letter-spacing: 1px; margin-bottom: 15px; color: #d4af37;">Lineage II: Visual</h2>
 
         <!-- Экран выбора классов при создании -->
         <div id="creation-screen">
             <div class="creation-title">Выбор Пути Героя</div>
-            <p style="font-size: 12px; color: #888;">Определитесь с классом у Великого Мастера в деревне:</p>
             
             <div class="class-grid">
                 <div class="class-card" onclick="createCharacter('warrior')">
-                    <div class="class-header"><span>⚔️ Воин (Gladiator)</span><span class="class-tag-phys">Физ. ДД</span></div>
-                    <div class="class-desc">Высокий запас здоровья, мощная тяжелая броня и сокрушительные удары вблизи.</div>
+                    <!-- Замените ссылку ниже на картинку гладиатора -->
+                    <img src="https://via.placeholder.com/400x160/2a1a1a/d4af37?text=Арт+Воина+(Gladiator)" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>⚔️ Воин (Gladiator)</span><span class="class-tag-phys">Физ. ДД</span></div>
+                        <div class="class-desc">Тяжелая броня и двуручные мечи.</div>
+                    </div>
                 </div>
                 
                 <div class="class-card" onclick="createCharacter('archer')">
-                    <div class="class-header"><span>🏹 Стрелок (Hawkeye)</span><span class="class-tag-phys">Физ. ДД</span></div>
-                    <div class="class-desc">Смертоносная стрельба на расстоянии, высокая скорость атаки и критический урон.</div>
+                    <!-- Замените ссылку ниже на картинку лучника -->
+                    <img src="https://via.placeholder.com/400x160/1a2a1a/d4af37?text=Арт+Лучника+(Hawkeye)" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>🏹 Стрелок (Hawkeye)</span><span class="class-tag-phys">Физ. ДД</span></div>
+                        <div class="class-desc">Луки, легкая броня и шанс крита.</div>
+                    </div>
                 </div>
 
                 <div class="class-card" onclick="createCharacter('mage')">
-                    <div class="class-header"><span>🔮 Маг (Spellsinger)</span><span class="class-tag-mag">Маг. ДД</span></div>
-                    <div class="class-desc">Разрушительные заклинания стихий, огромный запас маны (MP) и скорость каста.</div>
+                    <!-- Замените ссылку ниже на картинку мага -->
+                    <img src="https://via.placeholder.com/400x160/1a1a2a/d4af37?text=Арт+Мага+(Spellsinger)" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>🔮 Маг (Spellsinger)</span><span class="class-tag-mag">Маг. ДД</span></div>
+                        <div class="class-desc">Роба, посохи и мощные заклинания.</div>
+                    </div>
                 </div>
 
                 <div class="class-card" onclick="createCharacter('overlord')">
-                    <div class="class-header"><span>📜 Оверлорд (Overlord)</span><span class="class-tag-mag">Маг / Саппорт</span></div>
-                    <div class="class-desc">Темная магия клановых проклятий, контроль поля боя и усиленная защита.</div>
+                    <!-- Замените ссылку ниже на картинку оверлорда -->
+                    <img src="https://via.placeholder.com/400x160/2a1a2a/d4af37?text=Арт+Оверлорда+(Overlord)" class="class-image">
+                    <div class="class-info">
+                        <div class="class-header"><span>📜 Оверлорд (Overlord)</span><span class="class-tag-mag">Маг / Саппорт</span></div>
+                        <div class="class-desc">Магия орков, дебаффы и дубины.</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Основной игровой экран -->
+        <!-- Основной игровой экран с Ареной -->
         <div id="game-screen">
-            <div class="stats-box">
-                <p>Игрок: <span id="username" class="highlight"></span> [<span id="class_type" style="color: #ffb86c; font-weight:bold;"></span>]</p>
-                <p>Уровень: <span id="level">1</span> | EXP: <span id="exp">0</span></p>
-                <p>Адена: <span id="adena" style="color: #f1fa8c; font-weight:bold;">0</span></p>
-                <p>HP: <span id="hp">100</span>/<span id="max_hp">100</span> | MP: <span id="mp">50</span>/<span id="max_mp">50</span></p>
-            </div>
-
-            <div class="stats-box" id="stats-container">
-                <!-- Динамические статы без конфликтов -->
+            
+            <!-- Боевая Арена -->
+            <div class="battle-arena">
+                <div class="combatant">
+                    <!-- Картинка вашего персонажа -->
+                    <img id="player-sprite" src="https://via.placeholder.com/100x130/333/fff?text=Игрок" alt="Player">
+                    <div class="combatant-name"><span id="username"></span></div>
+                </div>
+                
+                <div class="vs-badge">VS</div>
+                
+                <div class="combatant">
+                    <!-- Картинка Монстра -->
+                    <img src="https://via.placeholder.com/100x130/422/fff?text=Гремлин" alt="Monster">
+                    <div class="combatant-name" style="color:#ff5555;">Гремлин (Ур. 1)</div>
+                </div>
             </div>
 
             <button class="btn" onclick="sendAction('attack')">⚔️ Атаковать моба</button>
+
+            <div class="stats-box">
+                <p>Уровень: <span id="level" class="highlight">1</span> | EXP: <span id="exp">0</span></p>
+                <p>Адена: <span id="adena" style="color: #f1fa8c; font-weight:bold;">0</span></p>
+                <p>HP: <span id="hp" style="color:#ff5555;">100</span>/<span id="max_hp">100</span> | MP: <span id="mp" style="color:#5555ff;">50</span>/<span id="max_mp">50</span></p>
+            </div>
+
+            <div class="stats-box" id="stats-container">
+                <!-- Динамические статы -->
+            </div>
         </div>
     </div>
 
@@ -115,12 +156,7 @@
             fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegram_id: telegramId,
-                    username: firstName,
-                    action: action,
-                    class_type: classType
-                })
+                body: JSON.stringify({ telegram_id: telegramId, username: firstName, action: action, class_type: classType })
             })
             .then(res => res.json())
             .then(data => {
@@ -135,19 +171,16 @@
                     }
                 }
             })
-            .catch(err => console.error('Ошибка соединения:', err));
+            .catch(err => console.error('Ошибка:', err));
         }
 
         function createCharacter(classType) {
             syncWithServer('create', classType);
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
 
         function updateUI(u) {
             document.getElementById('username').innerText = u.username;
-            document.getElementById('class_type').innerText = u.class_type.toUpperCase();
             document.getElementById('level').innerText = u.level;
             document.getElementById('exp').innerText = u.exp;
             document.getElementById('adena').innerText = u.adena;
@@ -156,6 +189,13 @@
             document.getElementById('mp').innerText = u.mp;
             document.getElementById('max_mp').innerText = u.max_mp;
 
+// Меняем картинку персонажа на арене в зависимости от его класса
+let avatarUrl = '';
+if (u.class_type === 'warrior') avatarUrl = 'img/humanvoin.png'; // Ваша картинка воина
+if (u.class_type === 'archer') avatarUrl = 'img/elfluk.png'; // Картинка лучника
+if (u.class_type === 'mage') avatarUrl = 'img/humanmaq.png'; // Картинка мага
+if (u.class_type === 'overlord') avatarUrl = 'img/qaraelftx.png'; // Картинка оверлорда
+document.getElementById('player-sprite').src = avatarUrl;
             let statsHTML = '';
             if (u.p_atk > 0) {
                 statsHTML += `<p>⚔️ P. Atk: <b>${u.p_atk}</b> | 🛡️ P. Def: <b>${u.p_def}</b></p>`;
@@ -164,15 +204,12 @@
                 statsHTML += `<p>🔮 M. Atk: <b>${u.m_atk}</b> | 🛡️ M. Def: <b>${u.m_def}</b></p>`;
                 statsHTML += `<p>🌀 Cast. Speed: <b>${u.m_cast_speed}</b> | 🎯 Crit: <b>${u.crit}%</b></p>`;
             }
-            
             document.getElementById('stats-container').innerHTML = statsHTML;
         }
 
         function sendAction(actionType) {
             syncWithServer(actionType);
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
-            }
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         }
 
         syncWithServer();
